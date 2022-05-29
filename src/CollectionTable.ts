@@ -1,60 +1,65 @@
-import create, {types} from '@wonderlandlabs/collect';
-import {journalize} from "./Journalize";
-
-type optionsObj = ({
-  keyProvider?: (target: any, meta: any) => any;
-})
+import create from '@wonderlandlabs/collect';
+//import { journalize } from './Journalize';
+import {
+  contextObj,
+  mapCollection,
+  tableOptionsObj,
+  recordCreatorFn,
+  tableObj,
+} from './types';
+import { TableRecord } from './TableRecord';
 
 const KeyProviders = {
   _defaultIndex: 0,
   Default: () => {
     return ++KeyProviders._defaultIndex;
-  }
-}
+  },
+};
 
-export enum tableChangeTypeEnum {
-  added,
-  updated,
+export enum tableRecordState {
+  new,
+  saved,
   deleted,
 }
 
-export type anyMap = Map<any, any>;
+export class CollectionTable implements tableObj {
+  // journal: changeSet[] = [];
+  protected collection: mapCollection;
+  protected recordCreator: recordCreatorFn | undefined;
+  /**
+   * an index of Change timestamps against replacement tables.
+   * During transactions, values from the versions tables are used
+   * @protected
+   */
+  protected versions: mapCollection = create(new Map([]));
+  public context: contextObj;
+  name: string;
 
-export type tableItemChange = { key: any, old?: any, now?: any, type: tableChangeTypeEnum };
-
-export type completeUpdate = { oldTable?: anyMap[], newTable: anyMap, completeUpdate: boolean }
-
-export type changeSet = tableItemChange[] | completeUpdate;
-
-export type mapCollection = types.collectionObj<Map<any, any>, any, any>;
-
-export class Table {
-  journal: changeSet[] = [];
-  private store: mapCollection;
-
-  constructor(data = [], options?: optionsObj) {
+  constructor(
+    context: contextObj,
+    name: string,
+    data?: any[],
+    options?: tableOptionsObj
+  ) {
+    this.context = context;
+    this.name = name;
+    this.collection = create(new Map([]));
     this.addOptions(options);
-    // @ts-ignore
-    this.store = create(new Map([]));
-    this.store.onChange = (pendingStore: anyMap | undefined, action: string) => this.onStoreChange(pendingStore, action);
-    this.addMany(data);
+    if (data) this.addMany(data);
   }
 
-  addOptions(options?: optionsObj) {
+  protected addOptions(options?: tableOptionsObj) {
     if (options?.keyProvider) {
-      this.keyProvider = options.keyProvider
+      this.keyProvider = options.keyProvider;
+    }
+    if (options?.recordCreator) {
+      this.recordCreator = options.recordCreator;
     }
   }
 
-  onStoreChange(pendingStore?: anyMap, action?: string) {
-    if (pendingStore && action) {
-      this.journal.push(journalize(this.store, pendingStore, action));
-    }
-  }
-
-  transact(action: () => any, onError?: (err: any) => any) {
+  transact(action: (context: contextObj) => any, onError?: (err: any) => any) {
     try {
-      return action();
+      return this.context.transact(action);
     } catch (err) {
       if (onError) {
         return onError(err);
@@ -62,27 +67,70 @@ export class Table {
         throw err;
       }
     }
+    return this;
   }
 
-  private keyProvider: (target: any, meta: any) => any = () => KeyProviders.Default();
+  private keyProvider: (target: any, meta: any) => any = () =>
+    KeyProviders.Default();
 
-  private addMany(data: any[]) {
-    let out = new Map();
-    this.transact(() => {
-      for (let i = 0; i < data.length; ++i) {
-        const key = this.addItem(data[i]);
-        out.set(key, this.store.get(key));
+  public addMany(data: any[]) {
+    const out = new Map();
+    return this.transact(
+      () => {
+        for (let i = 0; i < data.length; ++i) {
+          const key = this.addRecord(data[i]);
+          out.set(key, this.collection.get(key));
+        }
+      },
+      err => {
+        return {
+          error: err,
+        };
       }
-    }, (err) => {
-      return {
-        error: err
-      }
-    })
+    );
   }
 
-  private addItem(record: any, meta?: any) {
+  /**
+   * retrieves (dynamically creates if needed)
+   * a collection indexed by the most recent change --
+   * or the base collection if there is none.
+   * @protected
+   */
+  protected get currentCollection(): mapCollection {
+    const last = this.context.lastChange;
+    if (!last) {
+      return this.collection;
+    }
+    if (!this.versions.hasKey(last.time)) {
+      this.versions.set(last.time, create(new Map([])));
+    }
+    return this.versions.get(last.time);
+  }
+
+  public addRecord(record: any, meta?: any) {
     const key = this.keyProvider(record, meta);
-    this.store.set(key, record);
+    let toAdd = record;
+    if (this.recordCreator) {
+      toAdd = this.recordCreator(record, key);
+    }
+
+    this.currentCollection.set(key, new TableRecord(this, key, toAdd));
     return key;
+  }
+
+  public getRecord(key: any) {
+    if (this.currentCollection.hasKey(key)) {
+      return this.currentCollection.get(key);
+    }
+    return this.versions.reduce(
+      (memo, collection, time) => {
+        if (collection.hasKey(key) && memo.time < time) {
+          const record = collection.get(key);
+          return { record, time };
+        }
+        return memo;
+      },
+      { record: undefined, time: 0 }
+    );
   }
 }

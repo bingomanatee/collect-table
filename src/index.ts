@@ -1,6 +1,7 @@
-export const sum = (a: number, b: number) => {
-  if ('development' === process.env.NODE_ENV) {
-    console.log('boop');
-  }
-  return a + b;
+import Context from './Context';
+
+const createContext = () => {
+  return new Context();
 };
+
+export default createContext;
