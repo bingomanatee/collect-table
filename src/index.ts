@@ -1,7 +1,4 @@
-import Context from './Context';
+import Context from "./Context";
 
-const createContext = () => {
-  return new Context();
-};
-
-export default createContext;
+export { CollectionTable } from "./CollectionTable";
+export default () => new Context();

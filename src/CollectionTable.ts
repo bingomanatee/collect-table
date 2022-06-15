@@ -1,136 +1,140 @@
-import create from '@wonderlandlabs/collect';
-//import { journalize } from './Journalize';
-import {
-  contextObj,
-  mapCollection,
-  tableOptionsObj,
-  recordCreatorFn,
-  tableObj,
-} from './types';
-import { TableRecord } from './TableRecord';
+import create from '@wonderlandlabs/collect'
+
+import EventEmitter from "emitix";
+import type { contextObj, mapCollection, recordCreatorFn, tableObj, tableOptionsObj, keyProviderFn } from './types';
+import { TableRecord } from "./TableRecord";
 
 const KeyProviders = {
   _defaultIndex: 0,
   Default: () => {
-    return ++KeyProviders._defaultIndex;
+    KeyProviders._defaultIndex += 1;
+    return KeyProviders._defaultIndex;
   },
 };
 
-export enum tableRecordState {
-  new,
-  saved,
-  deleted,
-}
-
-export class CollectionTable implements tableObj {
-  // journal: changeSet[] = [];
-  protected collection: mapCollection;
-  protected recordCreator: recordCreatorFn | undefined;
-  /**
-   * an index of Change timestamps against replacement tables.
-   * During transactions, values from the versions tables are used
-   * @protected
-   */
-  protected versions: mapCollection = create(new Map([]));
-  public context: contextObj;
-  name: string;
-
+export class CollectionTable extends EventEmitter implements tableObj{
   constructor(
     context: contextObj,
     name: string,
-    data?: any[],
     options?: tableOptionsObj
   ) {
+    super();
     this.context = context;
     this.name = name;
-    this.collection = create(new Map([]));
+    this._collection = create(new Map([]));
     this.addOptions(options);
-    if (data) this.addMany(data);
+
   }
 
   protected addOptions(options?: tableOptionsObj) {
     if (options?.keyProvider) {
-      this.keyProvider = options.keyProvider;
+      this.keyProvider = options?.keyProvider;
     }
-    if (options?.recordCreator) {
-      this.recordCreator = options.recordCreator;
+    if (options?.recordCreator ) {
+      this.recordCreator = options?.recordCreator;
+    }
+    if (options?.data) {
+      this.addMany(options?.data);
     }
   }
 
+  get collection(): mapCollection {
+    if (this.context.lastChange && !this.context.lastChange.backupTables.hasKey(this.name)) {
+      console.log('backing up ', this.name, 'into', this.context.lastChange);
+      this.context.lastChange.saveTableBackup(this.name, new Map(this._collection.store));
+    }
+    return this._collection;
+  }
+
+  set collection(value: mapCollection) {
+    this._collection = value;
+  }
+
+  public restore(store: Map<any, any>) {
+    this._collection.withComp({quiet: true}, () => {
+      this._collection.change(store);
+    });
+    return this;
+  }
+
+  private _collection: mapCollection;
+
+  protected recordCreator: recordCreatorFn | undefined;
+
+  public context: contextObj;
+
+  name: string;
+
   transact(action: (context: contextObj) => any, onError?: (err: any) => any) {
     try {
-      return this.context.transact(action);
+      this.context.transact(action);
     } catch (err) {
       if (onError) {
         return onError(err);
-      } else {
-        throw err;
       }
+        throw err;
+
     }
     return this;
   }
 
-  private keyProvider: (target: any, meta: any) => any = () =>
-    KeyProviders.Default();
+  public keyProvider: keyProviderFn = () => KeyProviders.Default();
 
   public addMany(data: any[]) {
-    const out = new Map();
+    const result = new Map();
     return this.transact(
       () => {
-        for (let i = 0; i < data.length; ++i) {
-          const key = this.addRecord(data[i]);
-          out.set(key, this.collection.get(key));
-        }
+        data.forEach((item) => {
+          const tableRecord  = this.addRecord(item);
+          result.set(tableRecord.key, tableRecord.data);
+        });
+        return { result };
       },
-      err => {
-        return {
+      err => ({
           error: err,
-        };
-      }
+        })
     );
   }
 
-  /**
-   * retrieves (dynamically creates if needed)
-   * a collection indexed by the most recent change --
-   * or the base collection if there is none.
-   * @protected
-   */
-  protected get currentCollection(): mapCollection {
-    const last = this.context.lastChange;
-    if (!last) {
-      return this.collection;
+  protected makeTableRecord(record: any, meta?: any) {
+    let recordInstance = record;
+
+    if (this.recordCreator) {
+      recordInstance = this.recordCreator(this, record);
     }
-    if (!this.versions.hasKey(last.time)) {
-      this.versions.set(last.time, create(new Map([])));
+
+    const metaHasKey = meta && (typeof meta === 'object') && ('key' in meta);
+    let key: any;
+
+    if (metaHasKey) {
+      key = meta?.key;
+    } else if (this.keyProvider) {
+      key = this.keyProvider(this, recordInstance, meta);
+    } else {
+      this.emit('error', {
+        action: 'makeTableRecord',
+        input: [recordInstance, meta]
+      })
+      throw new Error('cannot make a table record without a key or keyProvider');
     }
-    return this.versions.get(last.time);
+
+    return new TableRecord(this, recordInstance, key, meta)
+  }
+
+  public hasRecord(key) {
+    return this.collection.hasKey(key);
   }
 
   public addRecord(record: any, meta?: any) {
-    const key = this.keyProvider(record, meta);
-    let toAdd = record;
-    if (this.recordCreator) {
-      toAdd = this.recordCreator(record, key);
-    }
+    const tr = this.makeTableRecord(record, meta);
 
-    this.currentCollection.set(key, new TableRecord(this, key, toAdd));
-    return key;
+    const existing = this.collection.get(tr.key);
+    this.emit('addRecord', tr, existing);
+    this.collection.set(tr.key, tr);
+    return tr;
   }
 
   public getRecord(key: any) {
-    if (this.currentCollection.hasKey(key)) {
-      return this.currentCollection.get(key);
-    }
-    return this.versions.reduce(
-      (memo, collection, time) => {
-        if (collection.hasKey(key) && memo.time < time) {
-          const record = collection.get(key);
-          return { record, time };
-        }
-        return memo;
-      },
-      { record: undefined, time: 0 }
-    );
+    return this.collection.get(key);
   }
 }

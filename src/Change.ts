@@ -1,4 +1,6 @@
-import { changeObj, changePhases, contextObj } from './types';
+import create from '@wonderlandlabs/collect';
+import type { changeObj, contextObj, mapCollection } from './types';
+import { changePhases } from "./constants";
 
 /**
  * a wrapper for a single pending change.
@@ -6,8 +8,24 @@ import { changeObj, changePhases, contextObj } from './types';
  */
 export class Change implements changeObj {
   time: number;
+
   context: contextObj;
+
   phase: changePhases;
+
+  public backupTables = create(new Map<string, mapCollection>());
+
+  saveTableBackup(name, store) {
+    // @TODO: throw if exists?
+    this.backupTables.set(name, store);
+  }
+
+  applyBackups() {
+    this.backupTables.forEach((table, name) => {
+      this.context.restoreTable(name, table);
+    })
+  }
+
   error: any;
 
   get isActive() {

@@ -1,13 +1,16 @@
-import { collectionObj, keyType } from '@wonderlandlabs/collect/dist/types';
-import { clone } from '@wonderlandlabs/collect/dist/utils/change';
-import {
-  anyMap,
-  changeSet,
-  completeUpdate,
-  mapCollection,
-  tableChangeTypeEnum,
-  tableItemChange,
-} from './types';
+import type {
+  collectionObj,
+  keyType,
+} from '@wonderlandlabs/collect';
+import * as pkg from '@wonderlandlabs/collect';
+import type { anyMap, changeSet, mapCollection, tableItemChange } from "./types";
+import { tableChangeTypeEnum } from "./types";
+
+console.log('--- collect package:', pkg);
+
+function clone(item) {
+  return item;
+}
 
 class ItemChange implements tableItemChange {
   constructor(key: keyType, oldItem: any, newItem: any) {
@@ -33,7 +36,7 @@ class ItemDeletion implements tableItemChange {
   type = tableChangeTypeEnum.deleted;
 }
 
-class ChangeEverything implements completeUpdate {
+class ChangeEverything  {
   constructor(
     collection: collectionObj<anyMap, any, any>,
     pendingStore: anyMap
@@ -69,12 +72,14 @@ export function journalize(
           ? collection.compItems(newItem, oldItem)
           : newItem === oldItem)
       ) {
-        if (Array.isArray(changeList))
+        if (Array.isArray(changeList)) {
           changeList.push(new ItemChange(key, oldItem, newItem));
+        }
       }
     } else {
-      if (Array.isArray(changeList))
+      if (Array.isArray(changeList)) {
         changeList.push(new ItemDeletion(key, oldItem));
+      }
     }
     if (Array.isArray(changeList) && changeList.length > 10) {
       journalizeEverything();

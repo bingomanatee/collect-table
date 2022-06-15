@@ -1,17 +1,26 @@
 import { tableObj } from './types';
-import { tableRecordState } from './CollectionTable';
+import { tableRecordState } from "./constants";
 
 export class TableRecord {
   key: any;
+
   data: any;
+
   table: tableObj;
+
   state: tableRecordState;
 
-  constructor(table: tableObj, key: any, data?: any) {
+  meta?: any;
+
+  constructor(table: tableObj,    data: any, key: any, meta?: any) {
     this.key = key;
     this.data = data;
     this.table = table;
+    this.meta = meta;
     this.state = tableRecordState.new;
+    if ((typeof meta === 'object') && ('state' in meta))  {
+      this.state = meta.state;
+    }
   }
 
   get context() {
