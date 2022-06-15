@@ -1,17 +1,28 @@
 import create from '@wonderlandlabs/collect'
 
 import EventEmitter from "emitix";
-import type { contextObj, mapCollection, recordCreatorFn, tableObj, tableOptionsObj, keyProviderFn } from './types';
+import type {contextObj, keyProviderFn, mapCollection, recordCreatorFn, tableObj, tableOptionsObj} from './types';
 
 const KeyProviders = {
-  _defaultIndex: 0,
-  Default: () => {
-    KeyProviders._defaultIndex += 1;
-    return KeyProviders._defaultIndex;
+  _contextCache: new Map(),
+  Default: (table: tableObj) => {
+    const {context} = table;
+    if (!KeyProviders._contextCache.has(context)) {
+      KeyProviders._contextCache.set(context, 1);
+    }
+    const index = KeyProviders._contextCache.get(context);
+    KeyProviders._contextCache.set(context, index + 1);
+    return index;
   },
 };
 
-export class CollectionTable extends EventEmitter implements tableObj{
+export class CollectionTable extends EventEmitter implements tableObj {
+  public context: contextObj;
+
+  name: string;
+
+  protected recordCreator: recordCreatorFn | undefined;
+
   constructor(
     context: contextObj,
     name: string,
@@ -25,17 +36,7 @@ export class CollectionTable extends EventEmitter implements tableObj{
 
   }
 
-  protected addOptions(options?: tableOptionsObj) {
-    if (options?.keyProvider) {
-      this.keyProvider = options?.keyProvider;
-    }
-    if (options?.recordCreator ) {
-      this.recordCreator = options?.recordCreator;
-    }
-    if (options?.data) {
-      this.addMany(options?.data);
-    }
-  }
+  private _collection: mapCollection;
 
   get collection(): mapCollection {
     if (this.context.lastChange && !this.context.lastChange.backupTables.hasKey(this.name)) {
@@ -55,28 +56,22 @@ export class CollectionTable extends EventEmitter implements tableObj{
     return this;
   }
 
-  private _collection: mapCollection;
-
-  protected recordCreator: recordCreatorFn | undefined;
-
-  public context: contextObj;
-
-  name: string;
-
   transact(action: (context: contextObj) => any, onError?: (err: any) => any) {
     try {
-      this.context.transact(action);
+      const out = this.context.transact(action);
+      if (out.error) {
+        throw out.error;
+      }
+      return out;
     } catch (err) {
       if (onError) {
         return onError(err);
       }
-        throw err;
-
+      throw err;
     }
-    return this;
   }
 
-  public keyProvider: keyProviderFn = () => KeyProviders.Default();
+  public keyProvider: keyProviderFn = () => KeyProviders.Default(this);
 
   public addMany(data: Array<any | any[]>) {
     const result = new Map();
@@ -84,15 +79,48 @@ export class CollectionTable extends EventEmitter implements tableObj{
       () => {
         data.forEach((item) => {
           // @ts-ignore
-          const tableRecord  = Array.isArray(item) ? this.addRecord(...item) : this.addRecord(item);
+          const tableRecord = Array.isArray(item) ? this.addRecord(...item) : this.addRecord(item);
           result.set(tableRecord.key, tableRecord.record);
         });
-        return { result };
-      },
-      err => ({
-          error: err,
-        })
+        return {result};
+      }
     );
+  }
+
+  public hasRecord(key) {
+    return this.collection.hasKey(key);
+  }
+
+  public addRecord(record: any, meta?: any) {
+    const recordInstance = this.makeTableRecord(record, meta);
+
+    const key = this.makeRecordKey(recordInstance, meta);
+
+    const previous = this.collection.get(key);
+    this.emit('addRecord:before', recordInstance, key, previous);
+    this.collection.set(key, recordInstance);
+    this.emit('addRecord:after', recordInstance, key, previous);
+    return {
+      key,
+      record: recordInstance,
+      previous
+    };
+  }
+
+  public getRecord(key: any) {
+    return this.collection.get(key);
+  }
+
+  protected addOptions(options?: tableOptionsObj) {
+    if (options?.keyProvider) {
+      this.keyProvider = options?.keyProvider;
+    }
+    if (options?.recordCreator) {
+      this.recordCreator = options?.recordCreator;
+    }
+    if (options?.data) {
+      this.addMany(options?.data);
+    }
   }
 
   protected makeTableRecord(record: any, meta?: any) {
@@ -121,29 +149,5 @@ export class CollectionTable extends EventEmitter implements tableObj{
       throw new Error('cannot make a table record without a key or keyProvider');
     }
     return key;
-  }
-
-  public hasRecord(key) {
-    return this.collection.hasKey(key);
-  }
-
-  public addRecord(record: any, meta?: any) {
-    const recordInstance = this.makeTableRecord(record, meta);
-
-    const key = this.makeRecordKey(recordInstance, meta);
-
-    const previous = this.collection.get(key);
-    this.emit('addRecord:before', recordInstance, key, previous);
-    this.collection.set(key, recordInstance);
-    this.emit('addRecord:after', recordInstance, key, previous);
-    return {
-      key,
-      record: recordInstance,
-      previous
-    };
-  }
-
-  public getRecord(key: any) {
-    return this.collection.get(key);
   }
 }

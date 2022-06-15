@@ -44,9 +44,10 @@ export default class Context extends EventEmitter implements contextObj {
   transact(fn) {
     const change = new Change(this);
     this.transactions.addAfter(change);
+    let out;
     change.start();
     try {
-      fn(change);
+      out = fn(change);
       if (change.isActive) {
         change.executed();
       }
@@ -58,17 +59,20 @@ export default class Context extends EventEmitter implements contextObj {
       }
     } catch (error) {
       change.failed(error);
-    }
-    if(change.isFailed) {
       change.applyBackups();
     }
+
     this.transactions.deleteItem(change);
+
+    if (change.error) {
+      throw change.error;
+    }
+    return out;
   }
 
   /**
    * gets or generates a new TableCollection of a given name
    * @param name
-   * @param data
    * @param options
    */
   table(name, options?: tableOptionsObj) {

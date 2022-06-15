@@ -22,7 +22,7 @@ declare enum joinFreq {
 }
 
 declare type contextObj = {
-    transact: (fn: (changesObj: any) => any) => void;
+    transact: (fn: (changesObj: any) => any) => any;
     now: number;
     next: number;
     table: (name: string, options?: tableOptionsObj) => tableObj;

@@ -3,7 +3,7 @@ import type { collectionObj } from '@wonderlandlabs/collect';
 import { changePhases, joinFreq, tableChangeTypeEnum } from "./constants";
 
 export type contextObj = {
-  transact: (fn: (changesObj) => any) => void;
+  transact: (fn: (changesObj) => any) => any;
   now: number;
   next: number;
   table: (name: string, options?: tableOptionsObj) => tableObj;

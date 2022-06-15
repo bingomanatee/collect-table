@@ -29,6 +29,7 @@ module.exports = {
   ignorePatterns: ['.eslintrc.js', "types/types.d.ts"],
   rules: {
     "import/extensions": "off",
+    'prefer-destructuring': 'warn',
     '@typescript-eslint/ban-ts-comment': 'off',
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',

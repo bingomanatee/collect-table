@@ -62,7 +62,7 @@
     "eslint-plugin-airbnb": "^0.0.1-security"
   },
   "dependencies": {
-    "@wonderlandlabs/collect": "^0.1.11",
+    "@wonderlandlabs/collect": "^0.1.16",
     "emitix": "^2.2.0",
     "lodash.clonedeep": "^4.5.0"
   }
