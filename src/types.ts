@@ -47,7 +47,7 @@ export type tableObj = {
   getRecord: (key: any) => any | undefined;
   context: contextObj;
   restore: (store: Map<any, any>) => tableObj;
-};
+} & EventEmitter;
 export type recordCreatorFn = (table: tableObj, data: any, key?: any) => any;
 export type keyProviderFn = (table: tableObj, target: any, meta: any) => any;
 

@@ -2,7 +2,6 @@ import create from '@wonderlandlabs/collect'
 
 import EventEmitter from "emitix";
 import type { contextObj, mapCollection, recordCreatorFn, tableObj, tableOptionsObj, keyProviderFn } from './types';
-import { TableRecord } from "./TableRecord";
 
 const KeyProviders = {
   _defaultIndex: 0,
@@ -40,7 +39,6 @@ export class CollectionTable extends EventEmitter implements tableObj{
 
   get collection(): mapCollection {
     if (this.context.lastChange && !this.context.lastChange.backupTables.hasKey(this.name)) {
-      console.log('backing up ', this.name, 'into', this.context.lastChange);
       this.context.lastChange.saveTableBackup(this.name, new Map(this._collection.store));
     }
     return this._collection;
@@ -80,13 +78,14 @@ export class CollectionTable extends EventEmitter implements tableObj{
 
   public keyProvider: keyProviderFn = () => KeyProviders.Default();
 
-  public addMany(data: any[]) {
+  public addMany(data: Array<any | any[]>) {
     const result = new Map();
     return this.transact(
       () => {
         data.forEach((item) => {
-          const tableRecord  = this.addRecord(item);
-          result.set(tableRecord.key, tableRecord.data);
+          // @ts-ignore
+          const tableRecord  = Array.isArray(item) ? this.addRecord(...item) : this.addRecord(item);
+          result.set(tableRecord.key, tableRecord.record);
         });
         return { result };
       },
@@ -100,8 +99,12 @@ export class CollectionTable extends EventEmitter implements tableObj{
     let recordInstance = record;
 
     if (this.recordCreator) {
-      recordInstance = this.recordCreator(this, record);
+      recordInstance = this.recordCreator(this, record, meta);
     }
+    return recordInstance;
+  }
+
+  protected makeRecordKey(recordInstance, meta) {
 
     const metaHasKey = meta && (typeof meta === 'object') && ('key' in meta);
     let key: any;
@@ -117,8 +120,7 @@ export class CollectionTable extends EventEmitter implements tableObj{
       })
       throw new Error('cannot make a table record without a key or keyProvider');
     }
-
-    return new TableRecord(this, recordInstance, key, meta)
+    return key;
   }
 
   public hasRecord(key) {
@@ -126,12 +128,19 @@ export class CollectionTable extends EventEmitter implements tableObj{
   }
 
   public addRecord(record: any, meta?: any) {
-    const tr = this.makeTableRecord(record, meta);
+    const recordInstance = this.makeTableRecord(record, meta);
 
-    const existing = this.collection.get(tr.key);
-    this.emit('addRecord', tr, existing);
-    this.collection.set(tr.key, tr);
-    return tr;
+    const key = this.makeRecordKey(recordInstance, meta);
+
+    const previous = this.collection.get(key);
+    this.emit('addRecord:before', recordInstance, key, previous);
+    this.collection.set(key, recordInstance);
+    this.emit('addRecord:after', recordInstance, key, previous);
+    return {
+      key,
+      record: recordInstance,
+      previous
+    };
   }
 
   public getRecord(key: any) {

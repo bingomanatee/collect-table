@@ -63,7 +63,7 @@ declare type tableObj = {
     getRecord: (key: any) => any | undefined;
     context: contextObj;
     restore: (store: Map<any, any>) => tableObj;
-};
+} & EventEmitter;
 declare type recordCreatorFn = (table: tableObj, data: any, key?: any) => any;
 declare type keyProviderFn = (table: tableObj, target: any, meta: any) => any;
 declare type tableOptionsObj = {

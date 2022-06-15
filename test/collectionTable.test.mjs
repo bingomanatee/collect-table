@@ -3,8 +3,6 @@ import tap from 'tap';
 import pkg from '../dist/index.js';
 const {default: createContext} = pkg;
 
-console.log('createContext:', createContext);
-
 tap.test('CollectionTable', (ct) => {
 
   ct.test('constructor', (conTest) => {
@@ -12,23 +10,25 @@ tap.test('CollectionTable', (ct) => {
     conTest.test('recordCreator', (rcTest) => {
       const ctx = createContext();
       const users = ctx.table('users',  {
-        recordCreator: (table, data) => {
-          console.log('recordCreator -- testing data', data);
-          if (!((typeof data.name === 'string' ) && /^[\w ]{4,}$/.test(data.name))) {
+        recordCreator: (table, record) => {
+          if (!((typeof record.name === 'string' ) && /^[\w ]{4,}$/.test(record.name))) {
             throw new Error('no/bad name');
           }
-          if (!((typeof data.email === 'string') && /^.+@.+\..+$/.test(data.email))) {
+          if (!((typeof record.email === 'string') && /^.+@.+\..+$/.test(record.email))) {
             throw new Error('no/bad email');
           }
           return {
-            name: data.name,
-            email: data.email
+            name: record.name,
+            email: record.email
           }
         }
       });
 
-      const userRecord = users.addRecord({name: 'Bob Smith', email: 'bob@foo.com', junk: 'data'});
-      rcTest.same(userRecord.data, {name: 'Bob Smith', email: 'bob@foo.com'});
+      const { record } = users.addRecord({name: 'Bob Smith', email: 'bob@foo.com', junk: 'not included'});
+      rcTest.same(record, {name: 'Bob Smith', email: 'bob@foo.com'});
+      rcTest.throws(() => {
+        users.addRecord({name: 'Sam', email: 'sam@google.com'}); // name too short
+      }, /no\/bad name/)
       rcTest.end();
     })
 
@@ -42,10 +42,10 @@ tap.test('CollectionTable', (ct) => {
       const userTable = ctx.table('users');
       const { key } = userTable.addRecord({ name: 'Bob', role: 'admin' });
 
-      const { data: user } = userTable.getRecord(key);
+      const record = userTable.getRecord(key);
 
-      indexTest.same(user.name, 'Bob');
-      indexTest.same(user.role, 'admin');
+      indexTest.same(record.name, 'Bob');
+      indexTest.same(record.role, 'admin');
       indexTest.end();
     });
     keyTest.end();

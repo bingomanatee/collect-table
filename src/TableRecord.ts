@@ -1,7 +1,7 @@
 import { tableObj } from './types';
 import { tableRecordState } from "./constants";
 
-export class TableRecord {
+export default class TableRecord {
   key: any;
 
   data: any;
