@@ -1,23 +1,22 @@
 {
   "version": "0.1.0",
   "license": "MIT",
+  "source": "src/index.ts",
   "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "module": "dist/collect-table.esm.js",
+  "typings": "types/index.d.ts",
   "files": [
     "dist",
-    "src"
+    "src",
+    "types"
   ],
   "engines": {
     "node": ">=10"
   },
   "scripts": {
-    "start": "tsdx watch",
-    "build": "tsdx build",
-    "test": "tsdx test",
-    "lint": "tsdx lint",
-    "prepare": "tsdx build",
-    "size": "size-limit",
-    "analyze": "size-limit --why"
+    "build": "rimraf dist && tsc && rollup -c rollup.config.js",
+    "lint": "eslint . --ext .ts",
+    "test": "bash yarn build && tap test"
   },
   "peerDependencies": {},
   "husky": {
@@ -33,27 +32,37 @@
   },
   "name": "collect-table",
   "author": "David Edelhart",
-  "module": "dist/collect-table.esm.js",
-  "size-limit": [
-    {
-      "path": "dist/collect-table.cjs.production.min.js",
-      "limit": "10 KB"
-    },
-    {
-      "path": "dist/collect-table.esm.js",
-      "limit": "10 KB"
-    }
-  ],
   "devDependencies": {
-    "@size-limit/preset-small-lib": "^7.0.8",
-    "husky": "7.0.1",
-    "size-limit": "^7.0.8",
-    "tsdx": "^0.14.1",
+    "@open-wc/building-rollup": "^2.0.1",
+    "@rollup/plugin-commonjs": "^22.0.0",
+    "@rollup/plugin-node-resolve": "^13.3.0",
+    "@swc/helpers": "latest",
+    "@typescript-eslint/eslint-plugin": "^5.27.1",
+    "@typescript-eslint/parser": "^5.27.1",
+    "deepmerge": "^4.2.2",
+    "eslint": "^8",
+    "eslint-config-airbnb": "19.0.4",
+    "eslint-config-prettier": "8.5.0",
+    "eslint-import-resolver-typescript": "^2.7.1",
+    "eslint-plugin-import": "^2.25.3",
+    "eslint-plugin-jsx-a11y": "6.5.1",
+    "eslint-plugin-react": "^7.28.0",
+    "eslint-plugin-react-hooks": "^4.3.0",
+    "lodash-es": "^4.17.21",
+    "prettier": "2.6.2",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.75.6",
+    "rollup-plugin-peer-deps-external": "^2.2.4",
+    "rollup-plugin-terser": "^7.0.2",
+    "rollup-plugin-typescript2": "^0.32.1",
+    "tap": "^16.2.0",
     "tslib": "^2.4.0",
-    "typescript": "^4.7.2"
+    "typescript": "^4.7.3"
   },
   "dependencies": {
-    "@wonderlandlabs/collect": "^0.1",
-    "lodash.clonedeep": "^4.5.0"
+    "@wonderlandlabs/collect": "^0.1.11",
+    "emitix": "^2.2.0",
+    "lodash.clonedeep": "^4.5.0",
+    "rollup-plugin-dts": "^4.2.2"
   }
 }
