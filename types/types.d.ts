@@ -25,6 +25,7 @@ declare type contextObj = {
     transact: (fn: (changesObj: any) => any) => any;
     now: number;
     next: number;
+    hasTable: (name: string) => boolean;
     table: (name: string, options?: tableOptionsObj) => tableObj;
     lastChange: changeObj | undefined;
     restoreTable(name: string, table: mapCollection): any;
@@ -84,12 +85,11 @@ declare type joinConnObj = {
 };
 declare type joinOptsObj = {
     name?: string;
-    joinTableName: string;
 };
 declare type joinDefObj = {
     name?: string;
-    joinTable?: string;
-    connections: Array<joinConnObj>;
+    from: joinConnObj;
+    to: joinConnObj;
 };
 declare type contextOptionsObj = {
     joins?: joinDefObj[];

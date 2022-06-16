@@ -20,6 +20,14 @@ tap.test('CollectionTable', (ct) => {
 
   ct.test('constructor', (conTest) => {
 
+    conTest.test('basic table creation', (bas) => {
+      const ctx = createContext(['users', 'addrs']);
+      bas.ok(ctx.hasTable('users'));
+      bas.ok(ctx.hasTable('addrs'));
+      bas.notOk(ctx.hasTable('bassoons'));
+      bas.end();
+    });
+
     conTest.test('recordCreator', (rcTest) => {
       const ctx = createContext();
       const users = ctx.table('users',  {

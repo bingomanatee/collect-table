@@ -6,6 +6,7 @@ export type contextObj = {
   transact: (fn: (changesObj) => any) => any;
   now: number;
   next: number;
+  hasTable: (name: string) => boolean;
   table: (name: string, options?: tableOptionsObj) => tableObj;
   // eslint-disable-next-line no-use-before-define
   lastChange: changeObj | undefined;
@@ -72,13 +73,12 @@ export type joinConnObj = {
 
 export type joinOptsObj = {
   name?: string;
-  joinTableName: string;
 };
 
 export type joinDefObj = {
   name?: string;
-  joinTable?: string;
-  connections: Array<joinConnObj>;
+  from: joinConnObj;
+  to: joinConnObj;
 };
 
 export type contextOptionsObj = {

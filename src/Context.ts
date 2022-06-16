@@ -1,14 +1,9 @@
 import create from '@wonderlandlabs/collect';
 import EventEmitter from 'emitix';
-import { Change } from './Change';
-import {
-  changeObj,
-  contextObj,
-  contextOptionsObj, mapCollection,
-  tableDefObj,
-  tableOptionsObj,
-} from './types';
-import { CollectionTable } from './CollectionTable';
+import {Change} from './Change';
+import {changeObj, contextObj, contextOptionsObj, mapCollection, tableDefObj, tableOptionsObj,} from './types';
+import {CollectionTable} from './CollectionTable';
+import TableJoin from "./TableJoin";
 
 export default class Context extends EventEmitter implements contextObj {
   protected transactions = create([]);
@@ -24,21 +19,65 @@ export default class Context extends EventEmitter implements contextObj {
     if (tables) {
       tables.forEach(def => this.addTable(def));
     }
-    if (options) this.addOptions(options);
+    if (options) {
+      this.addOptions(options);
+    }
+  }
+
+  get lastChange(): changeObj | undefined {
+    return this.transactions.lastItem;
+  }
+
+  get now() {
+    return this.time;
+  }
+
+  get next() {
+    this.time += 1;
+    return this.time;
   }
 
   addOptions(_options?: contextOptionsObj) {
+    if (_options?.joins) {
+      _options.joins.forEach((join) => this.addJoin(join));
+    }
   }
 
-  addJoin() {
-   // const index = def.name || `join_${this.joins.size}`;
-  //  this.joins.set(index, new TableJoin(this, def, index));
+  private _nameJoin(joinDef) {
+    const props = create([joinDef.from.table]);
+    if (joinDef.from.key) {
+      props.addAfter(joinDef.from.key);
+    }
+    props.addAfter(joinDef.to.table)
+    if (joinDef.to.key) {
+      props.addAfter(joinDef.to.key);
+    }
+    while (this.joins.hasKey(props.store.join('_'))){
+      if( typeof props.lastItem === 'number') {
+        props.set(props.size - 1, props.lastItem + 1);
+      } else {
+        props.addAfter(2);
+      }
+    }
+    return props.store.join('_');
   }
 
-  restoreTable(name: string, tableCollection: mapCollection){
+  addJoin(join) {
+    const joinDef = new TableJoin(this, join);
+    if (!joinDef.name) {
+      joinDef.name = this._nameJoin(joinDef);
+    }
+    this.joins.set(joinDef.name, joinDef);
+  }
+
+  restoreTable(name: string, tableCollection: mapCollection) {
     if (this.tables.hasKey(name)) {
       this.tables.get(name).restore(tableCollection);
     }
+  }
+
+  hasTable(name: string) {
+    return this.tables.hasKey(name);
   }
 
   transact(fn) {
@@ -82,20 +121,11 @@ export default class Context extends EventEmitter implements contextObj {
     return this.tables.get(name);
   }
 
-  get lastChange(): changeObj | undefined {
-    return this.transactions.lastItem;
-  }
-
-  get now() {
-    return this.time;
-  }
-
-  get next() {
-    this.time += 1;
-    return this.time;
-  }
-
-  private addTable(def: tableDefObj) {
-    this.tables.set(def.name, def);
+  private addTable(def: tableDefObj | string) {
+    if (typeof def === 'string') {
+      this.table(def);
+    } else {
+      this.tables(def.name, def);
+    }
   }
 }
