@@ -16,7 +16,8 @@
   "scripts": {
     "build": "rimraf dist && tsc && rollup -c rollup.config.js",
     "lint": "eslint . --ext .ts",
-    "test": "bash yarn build && tap test"
+    "test": "bash yarn build && tap test",
+    "prepare": "install-peers"
   },
   "peerDependencies": {
     "rxjs": "^7.5.5"
@@ -52,6 +53,7 @@
     "eslint-plugin-react": "^7.28.0",
     "eslint-plugin-react-hooks": "^4.3.0",
     "install-peers": "^1.0.4",
+    "install-peers-cli": "^2.2.0",
     "lodash-es": "^4.17.21",
     "prettier": "2.6.2",
     "rimraf": "^3.0.2",
@@ -67,6 +69,7 @@
   "dependencies": {
     "@wonderlandlabs/collect": "^0.1.18",
     "emitix": "^2.2.0",
-    "lodash.clonedeep": "^4.5.0"
+    "lodash.clonedeep": "^4.5.0",
+    "lodash.isequal": "^4.5.0"
   }
 }

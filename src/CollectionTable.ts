@@ -6,7 +6,7 @@ import type {
   addDataMetaObj,
   contextObj, dataContextObj,
   keyProviderFn,
-  mapCollection,
+  mapCollection, queryCollection,
   queryDef,
   recordCreatorFn,
   tableObj,
@@ -14,6 +14,7 @@ import type {
 } from './types';
 import TableRecord from "./helpers/TableRecord";
 import TableRecordJoin from "./helpers/TableRecordJoin";
+import whereFn from "./helpers/whereFn";
 
 const { e } = utils;
 
@@ -182,36 +183,32 @@ export class CollectionTable extends EventEmitter implements tableObj, dataConte
 
   // -------------------------- query
 
-  query(query: queryDef) {
+  query(query: queryDef): queryCollection {
     if (query.table !== this.name) {
       throw e('badly targeted query; ', { query, table: this });
     }
 
-    let records;
+    const records = this.data.cloneShallow()
+      .map((item, key) => new TableRecord(this, key, {data: item}));
 
     if (query.where) {
-      records = this.data.cloneShallow()
-        .filter((item, key) => query.where && query.where(item, key, this))
-        .clone();
-    } else {
-      records = this.data.clone();
+      const test = whereFn(query);
+      records.filter(test);
     }
 
-    if (query.joins) {
-      records = records.map((item, key) => {
-        let itemMemo = item;
-        query.joins?.forEach((qjd) => {
-
-          const record = new TableRecord(this, key, {data: itemMemo})
-          const trJoin = new TableRecordJoin(qjd, this.context);
-          trJoin.injectJoin(record);
-          itemMemo = record.value;
-        });
-        return itemMemo;
+    query.joins?.forEach((qjd) => {
+      const trJoin = new TableRecordJoin(qjd, this.context);
+      records.forEach((record) => {
+        trJoin.injectJoin(record);
       });
-    }
+    });
 
-    return records.items;
+    return records;
+  }
+
+  queryItems(query: queryDef): any[] {
+    const result = this.query(query);
+    return result? result.items.map(record => record.value) : [];
   }
 
   /*
@@ -235,12 +232,13 @@ export type joinDefObj = {
   to: joinConnObj;
 };
 
-
-
 export type queryJoinDef = {
   joinName?: string;
+  join: joinFn;
   table?: string;
   where?: string;
-  joins?: queryDef[];
+  as?: string;
+  args? : any[];
 }
+
  */

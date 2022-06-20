@@ -1,9 +1,9 @@
 import { create, utils } from '@wonderlandlabs/collect';
-import { contextObj, joinConnObj, joinDefObj, queryJoinDef } from "../types";
+import {contextObj, joinConnObj, joinDefObj, joinResult, queryJoinDef} from "../types";
 import { joinFreq } from "../constants";
 import TableRecord from "./TableRecord";
 
-const { clone, e } = utils;
+const { e } = utils;
 
 export default class TableRecordJoin {
   private joinDef: queryJoinDef;
@@ -17,15 +17,7 @@ export default class TableRecordJoin {
 
   injectJoin(record: TableRecord) {
     const joined = this.joinedData(record);
-    const target = create(clone(record.data));
-    if (joined !== undefined) {
-      if (this.joinDef.as) {
-        target.set(this.joinDef.as, joined);
-      } else if (this.joinDef.joinName) {
-        target.set(this.joinDef.joinName, joined);
-      } else {
-        console.warn('table joinDef requires as or joinName');
-      }
+    if (joined) {
       if (this.joinDef.as) {
         record.joins.set(this.joinDef.as, joined);
       } else if (this.joinDef.joinName) {
@@ -39,7 +31,7 @@ export default class TableRecordJoin {
     }
   }
 
-  protected _joinItemTo(key, item, joinFrom, joinOther: joinConnObj) {
+  protected _joinItemTo(key, item, joinFrom, joinOther: joinConnObj) : joinResult {
     let sourceKey = key;
     if (joinFrom.key) {
       sourceKey = joinFrom.key;
@@ -63,31 +55,32 @@ export default class TableRecordJoin {
     }
 
     const otherTable = this.context.table(joinOther.table);
-    let out;
+    let found;
     switch (joinOther.frequency) {
       case joinFreq.noneOrOne:
       case joinFreq.one:
-        out = otherTable.data.reduce((memo, otherItem, otherKey, _s, stopper) => {
+        found = otherTable.data.reduce((memo, otherItem, otherKey, _s, stopper) => {
           if (matchFn(otherItem, otherKey)) {
             stopper.final();
-            return otherItem;
+            return new TableRecord(otherTable, otherKey);
           }
           return memo;
-        });
+        }, undefined);
 
         break;
 
       case joinFreq.oneOrMore:
       case joinFreq.noneOrMore:
-        out = otherTable.data.cloneShallow().filter(matchFn);
+        found = otherTable.data.cloneShallow()
+          .map((foundItem, foundKey) => matchFn(foundItem, foundKey) ? new TableRecord(otherTable, foundKey) : null).filter((maybeRecord) => maybeRecord).items;
         break;
 
       default:
     }
-    return out;
+    return found;
   }
 
-  protected joinedData(record: TableRecord) {
+  protected joinedData(record: TableRecord): joinResult {
     const { key } = record;
     const item = record.data;
     if (key === 'undefined' || item === 'undefined') {
@@ -97,18 +90,25 @@ export default class TableRecordJoin {
       if (!this.context.joins.hasKey(this.joinDef.joinName)) {
         throw e('join - bad join name', { item, joinDef: this.joinDef, table: this });
       }
-      const def: joinDefObj = this.context.joins.get(this.joinDef.joinName);
-      if (def.from.table === record.tableName) {
-        return this._joinItemTo(key, item, def.from, def.to);
-      }
-      if (def.to.table === record.tableName) {
-        return this._joinItemTo(key, item, def.to, def.from);
-      }
-      console.warn('bad join def obj:', { item, joinDef: this.joinDef, table: this });
+      return this._performContextJoin(record);
     }
     if (this.joinDef.join) {
-      return this.joinDef.join(item, record.table, this.joinDef.args);
+      return this.joinDef.join(record, this.joinDef.args);
     }
     throw e('join needs a named join or a join fn', { item, joinDef: this.joinDef })
+  }
+
+  _performContextJoin(record) : joinResult {
+    const { key } = record;
+    const item = record.data;
+    const def: joinDefObj = this.context.joins.get(this.joinDef.joinName);
+    if (def.from.table === record.tableName) {
+      return this._joinItemTo(key, item, def.from, def.to);
+    }
+    if (def.to.table === record.tableName) {
+      return this._joinItemTo(key, item, def.to, def.from);
+    }
+    console.warn('bad join def obj:', { item, joinDef: this.joinDef, table: this });
+    return undefined;
   }
 }

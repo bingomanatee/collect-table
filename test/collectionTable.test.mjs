@@ -5,16 +5,16 @@ import pkg from '../dist/index.js';
 const { default: createContext } = pkg;
 
 tap.test('CollectionTable', (ct) => {
-  const userCreator = (table, record) => {
-    if (!((typeof record.name === 'string') && /^[\w ]{4,}$/.test(record.name))) {
+  const userCreator = (_table, item) => {
+    if (!((typeof item.name === 'string') && /^[\w ]{4,}$/.test(item.name))) {
       throw new Error('no/bad name');
     }
-    if (!((typeof record.email === 'string') && /^.+@.+\..+$/.test(record.email))) {
+    if (!((typeof item.email === 'string') && /^.+@.+\..+$/.test(item.email))) {
       throw new Error('no/bad email');
     }
     return {
-      name: record.name,
-      email: record.email
+      name: item.name,
+      email: item.email
     }
   };
 
@@ -86,14 +86,18 @@ tap.test('CollectionTable', (ct) => {
     amTest.test('with bad data', (badTest) => {
       const ctx = createContext();
       const users = ctx.table('users', {
-        recordCreator: userCreator
+        recordCreator: userCreator,
+        data: [
+          userCreator({}, {name: 'Rick Steve', email: 'rick@yahoo.com'}),
+          userCreator({}, {name: 'Peter Parker', email: 'pparker@nyu.com'}),
+        ]
       });
 
       badTest.throws(() => {
         users.addMany(dataSource);
       }, /no\/bad name/);
 
-      badTest.same(users.data.size, 0);
+      badTest.same(users.data.size, 2);
 
       badTest.end();
     });

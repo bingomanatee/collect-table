@@ -30,6 +30,7 @@ declare type tableRecordMetaObj = {
     start?: any;
     joins?: stringMap;
 };
+declare type queryCollection = collectionObj<anyMap, any, tableRecordObj>;
 declare type joinConnObj = {
     table: string;
     key?: string;
@@ -41,6 +42,7 @@ declare type joinDefObj = {
     from: joinConnObj;
     to: joinConnObj;
 };
+declare type joinResult = tableRecordObj | tableRecordObj[] | undefined;
 declare type tableOptionsObj = {
     keyProvider?: keyProviderFn;
     recordCreator?: recordCreatorFn;
@@ -59,18 +61,23 @@ declare type contextOptionsObj = {
 };
 declare type recordCreatorFn = (table: tableObj, data: any, key?: any) => any;
 declare type keyProviderFn = (table: tableObj, target: any, meta?: any) => any;
-declare type joinFn = (item: any, table: tableDefObj, args?: any) => any;
+declare type joinFn = (record: tableRecordObj, args?: any) => any;
 declare type queryJoinDef = {
     joinName?: string;
     join: joinFn;
     table?: string;
-    where?: string;
+    where?: any;
     as?: string;
     args?: any[];
 };
+declare type whereObj = {
+    field?: string;
+    test: string | ((tableRecordObj: any) => boolean);
+    against?: any;
+};
 declare type queryDef = {
     table: string;
-    where?: (item: any, key: any, table: tableObj) => boolean;
+    where?: whereObj;
     joins?: Map<string, queryJoinDef>;
 };
 declare type contextObj = {
@@ -82,7 +89,8 @@ declare type contextObj = {
     lastChange: changeObj | undefined;
     restoreTable(name: string, table: mapCollection): any;
     joins: collectionObj<Map<string, joinDefObj>, string, joinDefObj>;
-    query: (query: queryDef) => any;
+    query: (query: queryDef) => queryCollection;
+    queryItems: (query: queryDef) => any[];
 } & EventEmitter;
 declare type tableObj = {
     name: string;
@@ -93,7 +101,8 @@ declare type tableObj = {
     getData: (key: any) => any | undefined;
     context: contextObj;
     restore: (store: Map<any, any>) => tableObj;
-    query: (query: queryDef) => any;
+    query: (query: queryDef) => queryCollection;
+    queryItems: (query: queryDef) => any[];
 } & EventEmitter;
 declare type dataContextObj = {
     name: string;
@@ -120,4 +129,4 @@ declare type tableRecordObj = {
     readonly value: any;
 };
 
-export { addDataMetaObj, anyMap, changeObj, contextObj, contextOptionsObj, dataContextObj, joinConnObj, joinDefObj, joinFn, keyProviderFn, mapCollection, queryDef, queryJoinDef, recordCreatorFn, stringMap, tableDefObj, tableObj, tableOptionsObj, tableRecordMetaObj, tableRecordObj };
+export { addDataMetaObj, anyMap, changeObj, contextObj, contextOptionsObj, dataContextObj, joinConnObj, joinDefObj, joinFn, joinResult, keyProviderFn, mapCollection, queryCollection, queryDef, queryJoinDef, recordCreatorFn, stringMap, tableDefObj, tableObj, tableOptionsObj, tableRecordMetaObj, tableRecordObj, whereObj };

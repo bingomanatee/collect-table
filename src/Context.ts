@@ -145,6 +145,11 @@ export default class Context extends EventEmitter implements contextObj {
       throw new Error(`query cannot find table ${table}`);
     }
 
-    return this.table(table).query(query);
+    return this.table(table)?.query(query);
+  }
+
+  queryItems(query: queryDef) {
+    const result = this.query(query);
+    return result? result.items.map(record => record.value) : [];
   }
 }
