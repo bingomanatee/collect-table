@@ -75,9 +75,7 @@ export default class Context extends EventEmitter implements contextObj {
     if (!joinDef.name) {
       joinDef.name = this._nameJoin(joinDef);
     }
-    if (joinDef.name) {
-      this.joins.set(joinDef.name, joinDef);
-    }
+    this.joins.set(joinDef.name, joinDef);
   }
 
   restoreTable(name: string, tableCollection: mapCollection) {

@@ -42,6 +42,7 @@ export default class TableJoin implements joinDefObj{
       } = def;
       this.from = asConn(fromTable);
       this.to = asConn(toTable);
+      this.name = def.name;
     }
 
    this.parseOpts(opts);

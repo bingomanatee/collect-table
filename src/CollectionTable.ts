@@ -55,6 +55,9 @@ export class CollectionTable extends EventEmitter implements tableObj, dataConte
     if (options?.keyProvider) {
       this.keyProvider = options?.keyProvider;
     }
+    if (options && 'key' in options) {
+      this.keyProvider = (item) => create(item).get(options.key);
+    }
     if (options?.recordCreator) {
       this.recordCreator = options?.recordCreator;
     }
@@ -114,18 +117,18 @@ export class CollectionTable extends EventEmitter implements tableObj, dataConte
    *
    */
   public addData(data: any, meta?: addDataMetaObj) {
-    const recordInstance = this.makeTableRecord(data, meta);
+    const record = this.makeTableRecord(data, meta);
 
     // if meta doesn't contain key, generate an auto-key from the keyProvider.
-    const key = this.makeRecordKey(recordInstance, meta);
+    const key = this.makeRecordKey(record, meta);
 
     const previous = this.data.get(key);
-    this.emit('addData:before', recordInstance, key, previous);
-    this.data.set(key, recordInstance);
-    this.emit('addData:after', recordInstance, key, previous);
+    this.emit('addData:before', record, key, previous);
+    this.data.set(key, record);
+    this.emit('addData:after', record, key, previous);
     return {
       key,
-      record: recordInstance,
+      record,
       previous
     };
   }
@@ -170,13 +173,15 @@ export class CollectionTable extends EventEmitter implements tableObj, dataConte
     if (metaHasKey) {
       key = meta?.key;
     } else if (this.keyProvider) {
-      key = this.keyProvider(this, recordInstance, meta);
+      key = this.keyProvider(recordInstance, this, meta);
     } else {
       this.emit('error', {
         action: 'makeTableRecord',
         input: [recordInstance, meta]
       })
-      throw new Error('cannot make a table record without a key or keyProvider');
+      throw e('cannot make a table record without a key or keyProvider', {
+        record: recordInstance, table: this, meta
+      });
     }
     return key;
   }

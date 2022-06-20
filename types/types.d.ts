@@ -45,6 +45,7 @@ declare type joinDefObj = {
 declare type joinResult = tableRecordObj | tableRecordObj[] | undefined;
 declare type tableOptionsObj = {
     keyProvider?: keyProviderFn;
+    key?: any;
     recordCreator?: recordCreatorFn;
     data?: any[];
 };
@@ -60,16 +61,17 @@ declare type contextOptionsObj = {
     joins?: joinDefObj[];
 };
 declare type recordCreatorFn = (table: tableObj, data: any, key?: any) => any;
-declare type keyProviderFn = (table: tableObj, target: any, meta?: any) => any;
+declare type keyProviderFn = (target: any, table: tableObj, meta?: any) => any;
 declare type joinFn = (record: tableRecordObj, args?: any) => any;
 declare type queryJoinDef = {
     joinName?: string;
-    join: joinFn;
+    map: joinFn;
     table?: string;
     where?: any;
     as?: string;
     args?: any[];
-};
+    joins?: queryJoinDef[];
+} | string;
 declare type whereObj = {
     field?: string;
     test: string | ((tableRecordObj: any) => boolean);
@@ -124,6 +126,7 @@ declare type tableRecordObj = {
     data: any;
     joins: stringMap;
     tableName: string;
+    key?: any;
     table: tableObj;
     context: contextObj;
     readonly value: any;

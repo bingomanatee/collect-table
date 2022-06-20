@@ -37,6 +37,7 @@ export type joinDefObj = {
 export type joinResult = tableRecordObj | tableRecordObj[] | undefined;
 export type tableOptionsObj = {
   keyProvider?: keyProviderFn;
+  key?: any;
   recordCreator?: recordCreatorFn;
   data?: any[];
 };
@@ -53,19 +54,20 @@ export type contextOptionsObj = {
 // -------------- functions
 
 export type recordCreatorFn = (table: tableObj, data: any, key?: any) => any;
-export type keyProviderFn = (table: tableObj, target: any, meta?: any) => any;
+export type keyProviderFn = ( target: any, table: tableObj,meta?: any) => any;
 export type joinFn = (record: tableRecordObj,  args?: any) => any;
 
 // --- query
 
 export type queryJoinDef = {
   joinName?: string;
-  join: joinFn;
+  map: joinFn;
   table?: string;
   where?: any;
   as?: string;
   args? : any[];
-}
+  joins?: queryJoinDef[]
+} | string;
 
 export type whereObj = {
   field?: string;
@@ -130,6 +132,7 @@ export type tableRecordObj = {
   data: any;
   joins: stringMap;
   tableName: string;
+  key?: any;
   table: tableObj;
   context: contextObj;
   readonly value: any; // data merged with joins;
