@@ -1,9 +1,105 @@
 import type { reduceAction } from '@wonderlandlabs/collect';
-import { contextObj } from './types';
-import { tableRecordState } from "./constants";
+import { create } from '@wonderlandlabs/collect';
+import { contextObj, dataContextObj, stringMap, tableRecordMetaObj, tableRecordObj } from "../types";
+import { tableRecordState } from "../constants";
 
-export default class TableRecord {
-  key?: any;
+/**
+ * a table record is a "decorated" record.
+ * This can operate as either a "snapshot" - an emitted single data item -
+ *
+ *  --- or -----
+ *
+ * a "pointer" -- an ongoing accessor with all the data needed to get the
+ * *current* data: context, key, and table name.
+ *
+ * In "snapshot" mode it can have an embedded data instance, potentially,
+ * augmented by joins, aggregates, etc.
+ */
+export default class TableRecord implements tableRecordObj {
+
+  constructor(dataContext: dataContextObj, keyOrReducer, meta?) {
+    const {name, context} = dataContext;
+    if (typeof keyOrReducer === 'function') {
+      this.reducer = keyOrReducer;
+    } else {
+      this._key = keyOrReducer;
+    }
+    this.tableName = name;
+    this.context = context
+    this.meta = meta;
+  }
+
+  private _data: any;
+
+  public joins: stringMap = new Map<string, any>();
+
+  get meta(): any {
+    return this._meta;
+  }
+
+  set meta(meta: tableRecordMetaObj | ((target: TableRecord) => any) | undefined) {
+    this.state = tableRecordState.new;
+
+    if (typeof meta === 'object') {
+      if ('state' in meta) {
+        this.state = meta.state;
+      }
+      if ('start' in meta) {
+        this.reducerStart = meta.start;
+      }
+      if ('data' in meta) {
+        this._data = meta.data;
+      }
+      if (meta?.joins instanceof Map) {
+        this.joins = meta.joins;
+      }
+      this._meta = meta;
+    }
+    if (typeof meta === 'function') {
+      this.reducerStart = meta(this);
+    }
+  }
+
+  private _makeMeta(overrides = {}) {
+    const meta : tableRecordMetaObj = {};
+    if (this.joins.size){
+      meta.joins = new Map(this.joins);
+    }
+    if (this._data) {
+      meta.data = this._data;
+    }
+    if (this.reducerStart) {
+      meta.start = this.reducerStart;
+    }
+    if (this.state !== tableRecordState.new) {
+      meta.state = this.state;
+    }
+    return {...meta, ...overrides};
+  }
+
+  /**
+   * returns a "hard snapshot" of the current data; potentially with joins etc.
+   * @param newData
+   */
+  clone(newData) {
+    return new TableRecord({ name: this.tableName, context: this.context },
+      this.key, this._makeMeta({
+        data: newData
+      }))
+  }
+
+  get key(): any {
+    if (this._key !== undefined) {
+      return this._key;
+    }
+    const { data } = this;
+    if (data === undefined) {
+      return undefined;
+    }
+    return this.table.data.keyOf(data);
+  }
+
+  private readonly _key?: any;
 
   reducer?: reduceAction;
 
@@ -13,42 +109,36 @@ export default class TableRecord {
 
   context: contextObj;
 
-  state: tableRecordState;
+  state?: tableRecordState;
 
-  meta?: any;
-
-  constructor({ name, table, context }, keyOrReducer, meta?) {
-    if (typeof keyOrReducer === 'function') {
-      this.reducer = keyOrReducer;
-    } else {
-      this.key = keyOrReducer;
-    }
-    this.tableName = name || table;
-    this.context = context
-    this.meta = meta;
-    if ((typeof meta === 'object') && ('state' in meta)) {
-      this.state = meta.state;
-    } else {
-      this.state = tableRecordState.new;
-    }
-    if (typeof meta === 'function') {
-      this.reducerStart = meta;
-    } else if (typeof meta === 'object' && ('start' in meta)) {
-      this.reducerStart = meta.start;
-    }
-  }
+  private _meta?: any;
 
   get table() {
     return this.context.table(this.table);
   }
 
-  get data () {
+  get data() {
+    if (this._data) {
+      return this._data;
+    }
     if (this.reducer) {
       if (typeof this.reducerStart === 'function') {
         return this.table.data.reduce(this.reducer, this.reducerStart(this));
       }
       return this.table.data.reduce(this.reducer, this.reducerStart);
     }
-      return this.table.getData(this.key);
+    return this.table.getData(this._key);
   }
+
+  get value() {
+    if (!this.joins?.size) {
+      return this.data;
+    }
+    const wrapped = create(this.data).clone();
+    this.joins.forEach((join, name) => {
+      wrapped.set(name, join);
+    });
+    return wrapped.store;
+  }
+
 }

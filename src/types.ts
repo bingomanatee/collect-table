@@ -1,12 +1,18 @@
 import EventEmitter from 'emitix';
 import type { collectionObj } from '@wonderlandlabs/collect';
-import { changePhases, joinFreq } from "./constants";
+import { changePhases, joinFreq, tableRecordState } from "./constants";
 
 // ------------- MICRO DEFS
 
 export type anyMap = Map<any, any>;
+export type stringMap = Map<string, any>;
 export type mapCollection = collectionObj<Map<any, any>, any, any>;
-
+export type tableRecordMetaObj = {
+  state?: tableRecordState;
+  data?: any;
+  start?: any;
+  joins?: stringMap;
+}
 // ------ joins
 
 export type joinConnObj = {
@@ -30,13 +36,12 @@ export type tableOptionsObj = {
   recordCreator?: recordCreatorFn;
   data?: any[];
 };
-
 export type tableDefObj = {
   name: string;
   data?: any[];
   options?: tableOptionsObj;
 };
-
+export type addDataMetaObj = {key?: any};
 export type contextOptionsObj = {
   joins?: joinDefObj[];
 };
@@ -83,13 +88,18 @@ export type tableObj = {
   name: string;
   data: mapCollection;
   addMany: (records: any[]) => any[];
-  hasRecord: (key: any) => boolean;
-  addRecord: (data: any, meta?: any) => any; // returns key
-  getRecord: (key: any) => any | undefined;
+  hasKey: (key: any) => boolean;
+  addData: (data: any, meta?: any) => any; // returns key
+  getData: (key: any) => any | undefined;
   context: contextObj;
   restore: (store: Map<any, any>) => tableObj;
-  query: (query: queryDef) => any
+  query: (query: queryDef) => any;
 } & EventEmitter;
+
+export type dataContextObj = {
+  name: string,
+  context: contextObj,
+}
 
 export type changeObj = {
   time: number;
@@ -102,3 +112,13 @@ export type changeObj = {
   isActive: boolean;
   isLive: boolean;
 };
+
+export type tableRecordObj = {
+  state?: tableRecordState;
+  data: any;
+  joins: stringMap;
+  tableName: string;
+  table: tableObj;
+  context: contextObj;
+  readonly value: any; // data merged with joins;
+}

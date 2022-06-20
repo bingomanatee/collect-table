@@ -15,9 +15,21 @@ declare enum joinFreq {
     noneOrMore = "noneOrMore",
     oneOrMore = "oneOrMore"
 }
+declare enum tableRecordState {
+    new = 0,
+    saved = 1,
+    deleted = 2
+}
 
 declare type anyMap = Map<any, any>;
+declare type stringMap = Map<string, any>;
 declare type mapCollection = collectionObj<Map<any, any>, any, any>;
+declare type tableRecordMetaObj = {
+    state?: tableRecordState;
+    data?: any;
+    start?: any;
+    joins?: stringMap;
+};
 declare type joinConnObj = {
     table: string;
     key?: string;
@@ -38,6 +50,9 @@ declare type tableDefObj = {
     name: string;
     data?: any[];
     options?: tableOptionsObj;
+};
+declare type addDataMetaObj = {
+    key?: any;
 };
 declare type contextOptionsObj = {
     joins?: joinDefObj[];
@@ -73,13 +88,17 @@ declare type tableObj = {
     name: string;
     data: mapCollection;
     addMany: (records: any[]) => any[];
-    hasRecord: (key: any) => boolean;
-    addRecord: (data: any, meta?: any) => any;
-    getRecord: (key: any) => any | undefined;
+    hasKey: (key: any) => boolean;
+    addData: (data: any, meta?: any) => any;
+    getData: (key: any) => any | undefined;
     context: contextObj;
     restore: (store: Map<any, any>) => tableObj;
     query: (query: queryDef) => any;
 } & EventEmitter;
+declare type dataContextObj = {
+    name: string;
+    context: contextObj;
+};
 declare type changeObj = {
     time: number;
     context: contextObj;
@@ -91,5 +110,14 @@ declare type changeObj = {
     isActive: boolean;
     isLive: boolean;
 };
+declare type tableRecordObj = {
+    state?: tableRecordState;
+    data: any;
+    joins: stringMap;
+    tableName: string;
+    table: tableObj;
+    context: contextObj;
+    readonly value: any;
+};
 
-export { anyMap, changeObj, contextObj, contextOptionsObj, joinConnObj, joinDefObj, joinFn, keyProviderFn, mapCollection, queryDef, queryJoinDef, recordCreatorFn, tableDefObj, tableObj, tableOptionsObj };
+export { addDataMetaObj, anyMap, changeObj, contextObj, contextOptionsObj, dataContextObj, joinConnObj, joinDefObj, joinFn, keyProviderFn, mapCollection, queryDef, queryJoinDef, recordCreatorFn, stringMap, tableDefObj, tableObj, tableOptionsObj, tableRecordMetaObj, tableRecordObj };

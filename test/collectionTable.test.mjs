@@ -34,10 +34,10 @@ tap.test('CollectionTable', (ct) => {
         recordCreator: userCreator
       });
 
-      const { record } = users.addRecord({ name: 'Bob Smith', email: 'bob@foo.com', junk: 'not included' });
+      const { record } = users.addData({ name: 'Bob Smith', email: 'bob@foo.com', junk: 'not included' });
       rcTest.same(record, { name: 'Bob Smith', email: 'bob@foo.com' });
       rcTest.throws(() => {
-        users.addRecord({ name: 'Sam', email: 'sam@google.com' }); // name too short
+        users.addData({ name: 'Sam', email: 'sam@google.com' }); // name too short
       }, /no\/bad name/)
       rcTest.end();
     })
@@ -45,13 +45,13 @@ tap.test('CollectionTable', (ct) => {
     conTest.end();
   });
 
-  ct.test('get/addRecord', (keyTest) => {
+  ct.test('get/addData', (keyTest) => {
     keyTest.test('should create, get record value', (indexTest) => {
       const ctx = createContext();
       const userTable = ctx.table('users');
 
-      const { key } = userTable.addRecord({ name: 'Bob', role: 'admin' });
-      const record = userTable.getRecord(key);
+      const { key } = userTable.addData({ name: 'Bob', role: 'admin' });
+      const record = userTable.getData(key);
 
       indexTest.same(record.name, 'Bob');
       indexTest.same(record.role, 'admin');

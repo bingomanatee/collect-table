@@ -1,11 +1,11 @@
-import { create, util } from '@wonderlandlabs/collect';
+import { create, utils } from '@wonderlandlabs/collect';
 import { contextObj, joinConnObj, joinDefObj, queryJoinDef } from "../types";
 import { joinFreq } from "../constants";
 import TableRecord from "./TableRecord";
 
-const { clone, e } = util;
+const { clone, e } = utils;
 
-export default class TableJoin {
+export default class TableRecordJoin {
   private joinDef: queryJoinDef;
 
   private context: contextObj;
@@ -15,7 +15,7 @@ export default class TableJoin {
     this.context = context;
   }
 
-  joinedRecord(record: TableRecord) {
+  injectJoin(record: TableRecord) {
     const joined = this.joinedData(record);
     const target = create(clone(record.data));
     if (joined !== undefined) {
@@ -26,8 +26,17 @@ export default class TableJoin {
       } else {
         console.warn('table joinDef requires as or joinName');
       }
+      if (this.joinDef.as) {
+        record.joins.set(this.joinDef.as, joined);
+      } else if (this.joinDef.joinName) {
+        record.joins.set(this.joinDef.joinName, joined);
+      } else {
+        throw e('cannot add joined data - no "as" or "joinName" in joinDef', {
+          TableRecordJoin: this,
+          joinDef: this.joinDef, record
+        })
+      }
     }
-    return record.clone(target.store);
   }
 
   protected _joinItemTo(key, item, joinFrom, joinOther: joinConnObj) {
@@ -79,7 +88,7 @@ export default class TableJoin {
   }
 
   protected joinedData(record: TableRecord) {
-    const {key} = record;
+    const { key } = record;
     const item = record.data;
     if (key === 'undefined' || item === 'undefined') {
       return undefined;

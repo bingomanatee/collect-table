@@ -3,18 +3,17 @@ import create, { utils } from '@wonderlandlabs/collect';
 import EventEmitter from "emitix";
 
 import type {
-  contextObj,
-  joinConnObj,
-  joinDefObj,
+  addDataMetaObj,
+  contextObj, dataContextObj,
   keyProviderFn,
   mapCollection,
   queryDef,
-  queryJoinDef,
   recordCreatorFn,
   tableObj,
   tableOptionsObj
 } from './types';
-import { joinFreq } from "./constants";
+import TableRecord from "./helpers/TableRecord";
+import TableRecordJoin from "./helpers/TableRecordJoin";
 
 const { e } = utils;
 
@@ -31,7 +30,7 @@ const KeyProviders = {
   },
 };
 
-export class CollectionTable extends EventEmitter implements tableObj {
+export class CollectionTable extends EventEmitter implements tableObj, dataContextObj {
   public context: contextObj;
 
   name: string;
@@ -51,7 +50,32 @@ export class CollectionTable extends EventEmitter implements tableObj {
 
   }
 
+  protected addOptions(options?: tableOptionsObj) {
+    if (options?.keyProvider) {
+      this.keyProvider = options?.keyProvider;
+    }
+    if (options?.recordCreator) {
+      this.recordCreator = options?.recordCreator;
+    }
+    if (options?.data) {
+      this.addMany(options?.data);
+    }
+  }
+
+  // -------------- Data
+
   private _data: mapCollection;
+
+  /**
+   * redact data state to a transactional snapshot
+   * @param store
+   */
+  public restore(store: Map<any, any>) {
+    this._data.withComp({ quiet: true }, () => {
+      this._data.change(store);
+    });
+    return this;
+  }
 
   get data(): mapCollection {
     if (this.context.lastChange && !this.context.lastChange.backupTables.hasKey(this.name)) {
@@ -64,12 +88,48 @@ export class CollectionTable extends EventEmitter implements tableObj {
     this._data = value;
   }
 
-  public restore(store: Map<any, any>) {
-    this._data.withComp({ quiet: true }, () => {
-      this._data.change(store);
-    });
-    return this;
+  public addMany(data: Array<any | any[]>) {
+    const result = new Map();
+    return this.transact(
+      () => {
+        data.forEach((item) => {
+          // @ts-ignore
+          const tableRecord = Array.isArray(item) ? this.addData(...item) : this.addData(item);
+          result.set(tableRecord.key, tableRecord.record);
+        });
+        return { result };
+      }
+    );
   }
+
+  public hasKey(key) {
+    return this.data.hasKey(key);
+  }
+
+  /**
+   * the "put" method. key can be explicit (in meta
+   * @param data {any} ideally, a compound
+   * @param meta {addDataMetaObj}
+   *
+   */
+  public addData(data: any, meta?: addDataMetaObj) {
+    const recordInstance = this.makeTableRecord(data, meta);
+
+    // if meta doesn't contain key, generate an auto-key from the keyProvider.
+    const key = this.makeRecordKey(recordInstance, meta);
+
+    const previous = this.data.get(key);
+    this.emit('addData:before', recordInstance, key, previous);
+    this.data.set(key, recordInstance);
+    this.emit('addData:after', recordInstance, key, previous);
+    return {
+      key,
+      record: recordInstance,
+      previous
+    };
+  }
+
+  // ----------------- Transact
 
   transact(action: (context: contextObj) => any, onError?: (err: any) => any) {
     try {
@@ -88,54 +148,8 @@ export class CollectionTable extends EventEmitter implements tableObj {
 
   public keyProvider: keyProviderFn = () => KeyProviders.Default(this);
 
-  public addMany(data: Array<any | any[]>) {
-    const result = new Map();
-    return this.transact(
-      () => {
-        data.forEach((item) => {
-          // @ts-ignore
-          const tableRecord = Array.isArray(item) ? this.addRecord(...item) : this.addRecord(item);
-          result.set(tableRecord.key, tableRecord.record);
-        });
-        return { result };
-      }
-    );
-  }
-
-  public hasRecord(key) {
-    return this.data.hasKey(key);
-  }
-
-  public addRecord(record: any, meta?: any) {
-    const recordInstance = this.makeTableRecord(record, meta);
-
-    const key = this.makeRecordKey(recordInstance, meta);
-
-    const previous = this.data.get(key);
-    this.emit('addRecord:before', recordInstance, key, previous);
-    this.data.set(key, recordInstance);
-    this.emit('addRecord:after', recordInstance, key, previous);
-    return {
-      key,
-      record: recordInstance,
-      previous
-    };
-  }
-
-  public getRecord(key: any) {
+  public getData(key: any) {
     return this.data.get(key);
-  }
-
-  protected addOptions(options?: tableOptionsObj) {
-    if (options?.keyProvider) {
-      this.keyProvider = options?.keyProvider;
-    }
-    if (options?.recordCreator) {
-      this.recordCreator = options?.recordCreator;
-    }
-    if (options?.data) {
-      this.addMany(options?.data);
-    }
   }
 
   protected makeTableRecord(record: any, meta?: any) {
@@ -185,20 +199,15 @@ export class CollectionTable extends EventEmitter implements tableObj {
 
     if (query.joins) {
       records = records.map((item, key) => {
-        const target = create(item);
-        query.joins?.forEach((joinItem, _key, _map) => {
-          const ji = joinItem as queryJoinDef;
+        let itemMemo = item;
+        query.joins?.forEach((qjd) => {
 
-          const joined = this._joinItem(key, item, ji);
-          if (joined !== undefined) {
-            if (ji.as) {
-              target.set(ji.as, joined);
-            } else if (ji.joinName) {
-              target.set(ji.joinName, joined);
-            }
-          }
+          const record = new TableRecord(this, key, {data: itemMemo})
+          const trJoin = new TableRecordJoin(qjd, this.context);
+          trJoin.injectJoin(record);
+          itemMemo = record.value;
         });
-        return item;
+        return itemMemo;
       });
     }
 
@@ -215,74 +224,6 @@ export type joinConnObj = {
 };
 
    */
-
-  protected _joinItemTo(key, item, joinFrom, joinOther: joinConnObj) {
-    let sourceKey = key;
-    if (joinFrom.key) {
-      sourceKey = joinFrom.key;
-    }
-
-    const targetValue = create(item).get(sourceKey);
-
-    if (!this.context.hasTable(joinOther.table)) {
-      throw e('_joinItemTo: other table is not present', { joinOther, table: this })
-    }
-
-    const matchFn = (otherItem, otherKey) => {
-      if (joinOther.key) {
-        if (create(otherItem).get(joinOther.key) === targetValue) {
-          return true;
-        }
-      } else if (otherKey === targetValue) {
-        return true;
-      }
-      return false;
-    }
-
-    const otherTable = this.context.table(joinOther.table);
-    let out;
-    switch (joinOther.frequency) {
-      case joinFreq.noneOrOne:
-      case joinFreq.one:
-        out = otherTable.data.reduce((memo, otherItem, otherKey, _s, stopper) => {
-          if (matchFn(otherItem, otherKey)) {
-            stopper.final();
-            return otherItem;
-          }
-          return memo;
-        });
-
-        break;
-
-      case joinFreq.oneOrMore:
-      case joinFreq.noneOrMore:
-        out = otherTable.data.cloneShallow().filter(matchFn);
-        break;
-
-      default:
-    }
-    return out;
-  }
-
-  protected _joinItem(key, item, join: queryJoinDef) {
-    if (join.joinName) {
-      if (!this.context.joins.hasKey(join.joinName)) {
-        throw e('join - bad join name', { item, join, table: this });
-      }
-      const def: joinDefObj = this.context.joins.get(join.joinName);
-      if (def.from.table === this.name) {
-        return this._joinItemTo(key, item, def.from, def.to);
-      }
-      if (def.to.table === this.name) {
-        return this._joinItemTo(key, item, def.to, def.from);
-      }
-      throw e('bad join def obj:', { item, join, table: this });
-    }
-    if (join.join) {
-      return join.join(item, this, join.args);
-    }
-    throw e('join needs a named join or a join fn', { item, join })
-  }
 }
 
 /*
