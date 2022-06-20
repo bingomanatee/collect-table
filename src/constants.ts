@@ -14,10 +14,10 @@ export enum tableChangeTypeEnum {
 }
 
 export enum joinFreq {
-  noneOrOne,
-  one,
-  noneOrMore,
-  oneOrMore,
+  noneOrOne= 'noneOrOne',
+  one = 'one',
+  noneOrMore = 'noneOrMore',
+  oneOrMore = 'oneOrMore',
 }
 
 export enum tableRecordState {

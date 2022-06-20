@@ -1,7 +1,15 @@
 import create from '@wonderlandlabs/collect';
 import EventEmitter from 'emitix';
 import {Change} from './Change';
-import {changeObj, contextObj, contextOptionsObj, mapCollection, tableDefObj, tableOptionsObj,} from './types';
+import {
+  changeObj,
+  contextObj,
+  contextOptionsObj,
+  mapCollection,
+  queryDef,
+  tableDefObj,
+  tableOptionsObj,
+} from './types';
 import {CollectionTable} from './CollectionTable';
 import TableJoin from "./TableJoin";
 
@@ -12,7 +20,7 @@ export default class Context extends EventEmitter implements contextObj {
 
   protected tables = create(new Map([]));
 
-  protected joins = create(new Map([]));
+  public joins = create(new Map([]));
 
   constructor(tables?: tableDefObj[], options?: contextOptionsObj) {
     super();
@@ -67,7 +75,9 @@ export default class Context extends EventEmitter implements contextObj {
     if (!joinDef.name) {
       joinDef.name = this._nameJoin(joinDef);
     }
-    this.joins.set(joinDef.name, joinDef);
+    if (joinDef.name) {
+      this.joins.set(joinDef.name, joinDef);
+    }
   }
 
   restoreTable(name: string, tableCollection: mapCollection) {
@@ -125,7 +135,16 @@ export default class Context extends EventEmitter implements contextObj {
     if (typeof def === 'string') {
       this.table(def);
     } else {
-      this.tables(def.name, def);
+      this.table(def.name, def);
     }
+  }
+
+  query(query:  queryDef) {
+    const {table } = query;
+    if (!this.hasTable(table)) {
+      throw new Error(`query cannot find table ${table}`);
+    }
+
+    return this.table(table).query(query);
   }
 }
