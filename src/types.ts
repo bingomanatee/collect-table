@@ -61,13 +61,9 @@ export type joinFn = (record: tableRecordObj,  args?: any) => any;
 
 export type queryJoinDef = {
   joinName?: string;
-  map: joinFn;
-  table?: string;
-  where?: any;
   as?: string;
-  args? : any[];
-  joins?: queryJoinDef[]
-} | string;
+  connections?: joinConnObj[]
+} & queryDef;
 
 export type whereObj = {
   field?: string;
@@ -77,6 +73,7 @@ export type whereObj = {
 
 export type queryDef = {
   table: string;
+  key?: any;
   where?: whereObj;
   joins?: Map<string, queryJoinDef>;
 }
@@ -87,6 +84,7 @@ export type contextObj = {
   transact: (fn: (changesObj) => any) => any;
   now: number;
   next: number;
+  recordForKey: (key: any) => tableRecordObj;
   hasTable: (name: string) => boolean;
   table: (name: string, options?: tableOptionsObj) => tableObj;
   // eslint-disable-next-line no-use-before-define
@@ -95,6 +93,7 @@ export type contextObj = {
   joins: collectionObj<Map<string, joinDefObj>, string, joinDefObj>;
   query: (query: queryDef) => queryCollection;
   queryItems: (query: queryDef) => any[];
+  activeChanges: collectionObj<changeObj[],number,changeObj>;
 } & EventEmitter;
 
 export type tableObj = {
@@ -115,6 +114,12 @@ export type dataContextObj = {
   context: contextObj,
 }
 
+export type tableRecordJoinObj = {
+  injectJoin: (tableRecordObj) => void;
+  joinName: string;
+  attachKey: string;
+}
+
 export type changeObj = {
   time: number;
   context: contextObj;
@@ -128,11 +133,10 @@ export type changeObj = {
 };
 
 export type tableRecordObj = {
-  state?: tableRecordState;
   data: any;
-  joins: stringMap;
   tableName: string;
   key?: any;
+  joins: stringMap;
   table: tableObj;
   context: contextObj;
   readonly value: any; // data merged with joins;

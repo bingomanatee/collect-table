@@ -1,17 +1,18 @@
 import {create} from '@wonderlandlabs/collect';
-import {contextObj, joinConnObj, joinDefObj, joinResult, queryJoinDef, tableRecordObj} from "../types";
+import { contextObj, joinConnObj, joinDefObj, joinResult, queryJoinDef, tableObj, tableRecordObj } from "../types";
 import {joinFreq} from "../constants";
 import TableRecord from "./TableRecord";
 
 export default class TableRecordJoin {
-  private joinDef: queryJoinDef;
-
-  private context: contextObj;
 
   constructor(joinDef: queryJoinDef, context) {
     this.joinDef = joinDef;
     this.context = context;
   }
+
+  private joinDef: queryJoinDef;
+
+  private context: contextObj;
 
   injectJoin(record: tableRecordObj) {
     const joined = this.joinedData(record);
@@ -30,7 +31,7 @@ export default class TableRecordJoin {
       throw new Error(`TableRecordJoin._performContextJoin join - bad join name ${  this.joinName}`);
     }
     const def: joinDefObj = this.context.joins.get(this.joinName);
-
+// @TODO: cache
     if (def?.from?.table === record.tableName) {
       return this._joinItemTo(record, def.from, def.to);
     }
@@ -40,21 +41,19 @@ export default class TableRecordJoin {
     return undefined;
   }
 
-  protected _joinItemTo(record: tableRecordObj, joinFrom, joinOther: joinConnObj): joinResult {
-    let foreignKey = record.key;
-    if (joinFrom.key) {
-      foreignKey = joinFrom.key;
+  protected _joinItemTo(record: tableRecordObj, localConn: joinConnObj, foreignConn: joinConnObj): joinResult {
+    let foreignKeyValue = record.key;
+    if (localConn.key) {
+      foreignKeyValue = create(record.data).get(localConn.key);
     }
 
-    const foreignKeyValue = create(record.data).get(foreignKey);
-
-    if (!this.context.hasTable(joinOther.table)) {
+    if (!this.context.hasTable(foreignConn.table)) {
       throw new Error('_joinItemTo: other table is not present')
     }
 
     const matchFn = (otherItem, otherKey) => {
-      if (joinOther.key) {
-        if (create(otherItem).get(joinOther.key) === foreignKeyValue) {
+      if (foreignConn.key) {
+        if (create(otherItem).get(foreignConn.key) === foreignKeyValue) {
           return true;
         }
       } else if (otherKey === foreignKeyValue) {
@@ -63,46 +62,13 @@ export default class TableRecordJoin {
       return false;
     }
 
-    const otherTable = this.context.table(joinOther.table);
-    let found;
-    let trjs;
-    if (typeof this.joinDef === 'object') {
-        trjs = this.joinDef.joins?.map((join) => new TableRecordJoin(join, this.context));
-    }
+    const otherTable : tableObj  = this.context.table(foreignConn.table);
+    let found = otherTable.data.cloneShallow()
+      .filter(matchFn)
+      .map((_data, otherKey)=> new TableRecord(this.context, {table: foreignConn.table, key: otherKey})).items
 
-    switch (joinOther.frequency) {
-      case joinFreq.noneOrOne:
-      case joinFreq.one:
-        found = otherTable.data.reduce((memo, otherItem, otherKey, _s, stopper) => {
-          if (matchFn(otherItem, otherKey)) {
-            stopper.final();
-            return new TableRecord(otherTable, otherKey);
-          }
-          return memo;
-        }, undefined);
-        if (found && trjs && trjs.length) {
-          trjs.forEach((trj) => {
-            trj.injectJoin(found);
-          });
-        }
-        break;
-
-      case joinFreq.oneOrMore:
-      case joinFreq.noneOrMore:
-        found = otherTable.data.cloneShallow()
-          .map((foundItem, foundKey) => matchFn(foundItem, foundKey) ? new TableRecord(otherTable, foundKey) : null).filter((maybeRecord) => maybeRecord).items;
-        if (typeof this.joinDef === 'object') {
-          if (trjs && trjs.length) {
-            found.forEach((joinedRecord: tableRecordObj) => {
-              trjs.forEach((trj) => {
-                trj.injectJoin(joinedRecord);
-              });
-            })
-          }
-        }
-        break;
-
-      default:
+    if ((foreignConn.frequency === joinFreq.noneOrOne) || (foreignConn.frequency === joinFreq.one)) {
+      found = found.unshift();
     }
 
     return found;
@@ -135,27 +101,32 @@ export default class TableRecordJoin {
     return undefined;
   }
 
+  _performLocalJoin(record): joinResult {
+    if (!this.joinDef.connections) throw new Error('_performLocalJoin requires connections');
+
+    const [fromDef, toDef] = this.joinDef?.connections;
+// @TODO: cache
+    if (fromDef?.table === record.tableName) {
+      return this._joinItemTo(record, fromDef, toDef);
+    }
+    if (toDef?.table === record.tableName) {
+      return this._joinItemTo(record, toDef, fromDef);
+    }
+    return undefined;
+  }
+
   protected joinedData(record: tableRecordObj): joinResult {
-    const {key} = record;
-    const item = record.data;
-    if (key === 'undefined' || item === 'undefined') {
+    const {key, data} = record;
+    if (key === 'undefined' || data  === 'undefined') {
       return undefined;
     }
-    const {joinDef} = this;
 
-    if (typeof joinDef === 'string') {
+    if (this.joinDef.joinName) {
       return this._performContextJoin(record);
     }
 
-    if (typeof joinDef === 'object') {
-      if (joinDef.map) {
-        return joinDef.map(record, joinDef.args);
-      }
-      if (joinDef.joinName) {
-        return this._performContextJoin(record);
-      }
+    if (this.joinDef.connections) {
+      return this._performLocalJoin(record);
     }
-
-    throw new Error('TableRecordJoin: joinedData -- join needs a named join or a join fn');
   }
 }

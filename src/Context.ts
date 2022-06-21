@@ -14,7 +14,7 @@ import {CollectionTable} from './CollectionTable';
 import TableJoin from "./TableJoin";
 
 export default class Context extends EventEmitter implements contextObj {
-  protected transactions = create([]);
+  public activeChanges = create([]);
 
   protected time = 0;
 
@@ -33,7 +33,7 @@ export default class Context extends EventEmitter implements contextObj {
   }
 
   get lastChange(): changeObj | undefined {
-    return this.transactions.lastItem;
+    return this.activeChanges.lastItem;
   }
 
   get now() {
@@ -90,7 +90,7 @@ export default class Context extends EventEmitter implements contextObj {
 
   transact(fn) {
     const change = new Change(this);
-    this.transactions.addAfter(change);
+    this.activeChanges.addAfter(change);
     let out;
     change.start();
     try {
@@ -109,7 +109,7 @@ export default class Context extends EventEmitter implements contextObj {
       change.applyBackups();
     }
 
-    this.transactions.deleteItem(change);
+    this.activeChanges.deleteItem(change);
 
     if (change.error) {
       throw change.error;

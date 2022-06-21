@@ -110,6 +110,10 @@ export class CollectionTable extends EventEmitter implements tableObj, dataConte
     return this.data.hasKey(key);
   }
 
+  public recordForKey(key, meta) {
+    return new TableRecord(this, key, meta);
+  }
+
   /**
    * the "put" method. key can be explicit (in meta
    * @param data {any} ideally, a compound
@@ -117,18 +121,18 @@ export class CollectionTable extends EventEmitter implements tableObj, dataConte
    *
    */
   public addData(data: any, meta?: addDataMetaObj) {
-    const record = this.makeTableRecord(data, meta);
+    const preparedData = this.newData(data, meta);
 
     // if meta doesn't contain key, generate an auto-key from the keyProvider.
-    const key = this.makeRecordKey(record, meta);
+    const key = this.makeDataKey(preparedData, meta);
 
     const previous = this.data.get(key);
-    this.emit('addData:before', record, key, previous);
-    this.data.set(key, record);
-    this.emit('addData:after', record, key, previous);
+    this.emit('addData:before', preparedData, key, previous);
+    this.data.set(key, preparedData);
+    this.emit('addData:after', preparedData, key, previous);
     return {
       key,
-      record,
+      record: preparedData,
       previous
     };
   }
@@ -156,7 +160,7 @@ export class CollectionTable extends EventEmitter implements tableObj, dataConte
     return this.data.get(key);
   }
 
-  protected makeTableRecord(record: any, meta?: any) {
+  protected newData(record: any, meta?: any) {
     let recordInstance = record;
 
     if (this.recordCreator) {
@@ -165,7 +169,7 @@ export class CollectionTable extends EventEmitter implements tableObj, dataConte
     return recordInstance;
   }
 
-  protected makeRecordKey(recordInstance, meta) {
+  protected makeDataKey(recordInstance, meta) {
 
     const metaHasKey = meta && (typeof meta === 'object') && ('key' in meta);
     let key: any;
@@ -176,7 +180,7 @@ export class CollectionTable extends EventEmitter implements tableObj, dataConte
       key = this.keyProvider(recordInstance, this, meta);
     } else {
       this.emit('error', {
-        action: 'makeTableRecord',
+        action: 'newData',
         input: [recordInstance, meta]
       })
       throw e('cannot make a table record without a key or keyProvider', {
@@ -193,19 +197,18 @@ export class CollectionTable extends EventEmitter implements tableObj, dataConte
       throw e('badly targeted query; ', { query, table: this });
     }
 
-    const records = this.data.cloneShallow()
-      .map((item, key) => new TableRecord(this, key, {data: item}));
+    const joinHelpers = create(new Map());
+
+    const records = ('key' in query) ? [this.recordForKey(query.key, {query, joinHelpers})] : this.data.keys()
+      .map((key) => this.recordForKey(key, {query, joinHelpers}));
 
     if (query.where) {
-      const test = whereFn(query);
-      records.filter(test);
+      records.filter(whereFn(query));
     }
 
     query.joins?.forEach((qjd) => {
       const trJoin = new TableRecordJoin(qjd, this.context);
-      records.forEach((record) => {
-        trJoin.injectJoin(record);
-      });
+      joinHelpers.set(qjd, trJoin);
     });
 
     return records;

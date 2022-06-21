@@ -69,6 +69,7 @@
   "dependencies": {
     "@wonderlandlabs/collect": "^0.1.18",
     "emitix": "^2.2.0",
+    "immer": "^9.0.15",
     "lodash.clonedeep": "^4.5.0",
     "lodash.isequal": "^4.5.0"
   }
