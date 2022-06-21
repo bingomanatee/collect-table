@@ -15,7 +15,7 @@ function asConn(def) {
   }
 
   if (! ('frequency' in out)) {
-    out.frequency = joinFreq.noneOrOne;
+    out.frequency = joinFreq.noneOrMore;
   }
   return out;
 }

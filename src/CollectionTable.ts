@@ -3,14 +3,14 @@ import create, { utils } from '@wonderlandlabs/collect';
 import EventEmitter from "emitix";
 
 import type {
-  addDataMetaObj,
-  contextObj, dataContextObj,
+  addDataMetaObj, anyMap,
+  contextObj,
   keyProviderFn,
   mapCollection, queryCollection,
   queryDef,
   recordCreatorFn,
   tableObj,
-  tableOptionsObj
+  tableOptionsObj, tableRecordMetaObj
 } from './types';
 import TableRecord from "./helpers/TableRecord";
 import TableRecordJoin from "./helpers/TableRecordJoin";
@@ -31,7 +31,7 @@ const KeyProviders = {
   },
 };
 
-export class CollectionTable extends EventEmitter implements tableObj, dataContextObj {
+export class CollectionTable extends EventEmitter implements tableObj {
   public context: contextObj;
 
   name: string;
@@ -74,7 +74,7 @@ export class CollectionTable extends EventEmitter implements tableObj, dataConte
    * redact data state to a transactional snapshot
    * @param store
    */
-  public restore(store: Map<any, any>) {
+  public restore(store: anyMap) {
     this._data.withComp({ quiet: true }, () => {
       this._data.change(store);
     });
@@ -110,8 +110,8 @@ export class CollectionTable extends EventEmitter implements tableObj, dataConte
     return this.data.hasKey(key);
   }
 
-  public recordForKey(key, meta) {
-    return new TableRecord(this, key, meta);
+  public recordForKey(key, meta?: tableRecordMetaObj) {
+    return new TableRecord(this.context, {table: this.name, key}, meta);
   }
 
   /**
@@ -198,18 +198,20 @@ export class CollectionTable extends EventEmitter implements tableObj, dataConte
     }
 
     const joinHelpers = create(new Map());
+    query.joins?.forEach((qjd) => {
+      const trJoin = new TableRecordJoin(this.context, qjd);
+      joinHelpers.set(qjd, trJoin);
+    });
 
-    const records = ('key' in query) ? [this.recordForKey(query.key, {query, joinHelpers})] : this.data.keys()
-      .map((key) => this.recordForKey(key, {query, joinHelpers}));
+    const meta = {helpers: joinHelpers, joins: query.joins};
+    const base = ('key' in query) ? [this.recordForKey(query.key, meta)] : this.data.keys
+      .map((key) => this.recordForKey(key, meta));
+
+    const records = create(base);
 
     if (query.where) {
       records.filter(whereFn(query));
     }
-
-    query.joins?.forEach((qjd) => {
-      const trJoin = new TableRecordJoin(qjd, this.context);
-      joinHelpers.set(qjd, trJoin);
-    });
 
     return records;
   }

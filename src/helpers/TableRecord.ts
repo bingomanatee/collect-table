@@ -1,10 +1,9 @@
 import {create} from '@wonderlandlabs/collect';
-import produce from 'immer';
 
 import {
-  contextObj,
+  contextObj, helperMap, joinResult,
   queryDef,
-  queryJoinDef, tableRecordJoinObj,
+  queryJoinDef, tableRecordJoinObj, tableRecordMetaObj,
   tableRecordObj
 } from "../types";
 import TableRecordJoin from "./TableRecordJoin";
@@ -19,19 +18,32 @@ import TableRecordJoin from "./TableRecordJoin";
  * *current* data: context, key, and table name.
  *
  * In "snapshot" mode it can have an embedded data instance, potentially,
- * augmented by joins, aggregates, etc.
+ * augmented by joinedRecords, aggregates, etc.
  */
 export default class TableRecord implements tableRecordObj {
 
-  constructor(context: contextObj, query: queryDef, helpers?: Map<queryJoinDef, tableRecordJoinObj>) {
+  constructor(context: contextObj, query: queryDef, meta?: tableRecordMetaObj) {
     this.context = context;
     this.query = query;
-    if (query.joins) {
-      this.helpers = helpers || create(query.joins).reduce((map, join) => {
-        map.set(join, new TableRecordJoin(join, context));
+    if (meta) {
+      const {helpers, joins} = meta;
+      if (helpers) {
+        this.helpers = helpers;
+      } else if (joins) {
+        this.helpers =  create(joins).reduce((map, join) => {
+          map.set(join, new TableRecordJoin(context, join));
+          return map;
+        }, new Map());
+      }
+    }
+
+    if (query.joins && !this.helpers) {
+      this.helpers = create(query.joins).reduce((map, join) => {
+        map.set(join, new TableRecordJoin(context, join));
         return map;
       }, new Map());
     }
+
     this.updateJoins();
   }
 
@@ -39,15 +51,15 @@ export default class TableRecord implements tableRecordObj {
 
   public context: contextObj;
 
-  private helpers?: Map<queryJoinDef, tableRecordJoinObj>;
+  private helpers?: helperMap;
 
   private updateJoins() {
     if (this.helpers) {
-      this.helpers.forEach((helper: tableRecordJoinObj) => helper.injectJoin(this));
+      this.helpers.forEach((helper: tableRecordJoinObj) => helper.updateJoinedRecord(this));
     }
   }
 
-  public joins = new Map<queryJoinDef, any>();
+  public joinedRecords = new Map<queryJoinDef, any>();
 
   get key() {
     return this.query.key;
@@ -62,30 +74,25 @@ export default class TableRecord implements tableRecordObj {
   }
 
   get data() {
-    return this.context.table(this.query.table).getData(this.query.key);
+    return this.context.table(this.query.table).getData(this.key);
   }
 
   get value() {
-    if (!this.joins?.size) {
+    if (!this.joinedRecords?.size) {
       return this.data;
     }
+    this.updateJoins(); // @TODO: cache better
     const wrapped = create(this.data).clone();
-    this.joins.forEach((join, name) => {
-      if (!join) {
+    this.joinedRecords.forEach((result : joinResult | undefined, attachAs) => {
+      if (result === undefined) {
         return;
       }
-      if (join instanceof TableRecord) {
-        wrapped.set(name, join.value);
-      } else if (Array.isArray(join)) {
-        wrapped.set(name,
-          join.map((joinItem) => {
-            if (joinItem instanceof TableRecord) {
-              return joinItem.value;
-            }
-            return joinItem
-          }));
+
+     if (Array.isArray(result)) {
+        wrapped.set(attachAs,
+          result.map((joinItem) => joinItem.value));
       } else {
-        wrapped.set(name, join);
+        wrapped.set(attachAs, result.value);
       }
     });
     return wrapped.store;

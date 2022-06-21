@@ -14,13 +14,6 @@ import {CollectionTable} from './CollectionTable';
 import TableJoin from "./TableJoin";
 
 export default class Context extends EventEmitter implements contextObj {
-  public activeChanges = create([]);
-
-  protected time = 0;
-
-  protected tables = create(new Map([]));
-
-  public joins = create(new Map([]));
 
   constructor(tables?: tableDefObj[], options?: contextOptionsObj) {
     super();
@@ -31,6 +24,14 @@ export default class Context extends EventEmitter implements contextObj {
       this.addOptions(options);
     }
   }
+
+  public activeChanges = create([]);
+
+  protected time = 0;
+
+  protected tables = create(new Map([]));
+
+  public joins = create(new Map([]));
 
   get lastChange(): changeObj | undefined {
     return this.activeChanges.lastItem;

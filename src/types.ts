@@ -1,21 +1,20 @@
 /* eslint-disable no-use-before-define */
 import EventEmitter from 'emitix';
 import type { collectionObj } from '@wonderlandlabs/collect';
-import { changePhases, joinFreq, tableRecordState } from "./constants";
+import { changePhases, joinFreq } from "./constants";
 
 // ------------- MICRO DEFS
 
+export type helperMap = Map<queryJoinDef, tableRecordJoinObj>;
 export type anyMap = Map<any, any>;
 export type stringMap = Map<string, any>;
 export type mapCollection = collectionObj<Map<any, any>, any, any>;
 export type tableRecordMetaObj = {
-  state?: tableRecordState;
-  data?: any;
-  start?: any;
+  helpers?: helperMap;
   joins?: stringMap;
 }
 export type queryCollection = collectionObj<anyMap, any, tableRecordObj>;
-// ------ joins
+// ------ joinedRecords
 
 // this defines one "end" of a join - a pointer to the target, or the source.
 export type joinConnObj = {
@@ -84,7 +83,6 @@ export type contextObj = {
   transact: (fn: (changesObj) => any) => any;
   now: number;
   next: number;
-  recordForKey: (key: any) => tableRecordObj;
   hasTable: (name: string) => boolean;
   table: (name: string, options?: tableOptionsObj) => tableObj;
   // eslint-disable-next-line no-use-before-define
@@ -103,10 +101,10 @@ export type tableObj = {
   hasKey: (key: any) => boolean;
   addData: (data: any, meta?: any) => any; // returns key
   getData: (key: any) => any | undefined;
+  recordForKey: (key: any, meta?: tableRecordMetaObj) => tableRecordObj;
   context: contextObj;
-  restore: (store: Map<any, any>) => tableObj;
+  restore: (store: anyMap) => tableObj;
   query: (query: queryDef) => queryCollection;
-  queryItems: (query: queryDef) =>any[];
 } & EventEmitter;
 
 export type dataContextObj = {
@@ -115,7 +113,7 @@ export type dataContextObj = {
 }
 
 export type tableRecordJoinObj = {
-  injectJoin: (tableRecordObj) => void;
+  updateJoinedRecord: (tableRecordObj) => void;
   joinName: string;
   attachKey: string;
 }
@@ -136,8 +134,8 @@ export type tableRecordObj = {
   data: any;
   tableName: string;
   key?: any;
-  joins: stringMap;
+  joinedRecords: Map<any, joinResult | undefined>;
   table: tableObj;
   context: contextObj;
-  readonly value: any; // data merged with joins;
+  readonly value: any; // data merged with joinedRecords;
 }

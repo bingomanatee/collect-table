@@ -72,94 +72,7 @@ tap.test('queries', (suite) => {
       }
     ]
   });
-  suite.test('joins', (joins) => {
-    joins.test('1-1', (oneToOne) => {
-
-      oneToOne.same(ctx.joins.size, 2);
-
-      const queryItems = ctx.queryItems({
-        table: 'users',
-        joins: [{
-          joinName: "home",
-          as: 'addr'
-        }]
-      });
-
-      oneToOne.same(queryItems,
-        [
-          {
-            name: 'Bill Smith',
-            email: 'bill@google.com',
-            addID: 1,
-            addr: {id: 1, addr: '111 First Street', state: 'CA', country: 'US', postcode: 12345}
-          },
-          {
-            name: 'Sal Jones',
-            email: 'sal@yahoo.com',
-            addID: 3,
-            addr: {id: 3, addr: '333 Trinity Ave', state: 'OR', country: 'US', postcode: 72332}
-          },
-          {name: 'Dave Clark', email: 'nosferatu@transylvania.com'},
-          {
-            name: 'Ellen Fisk',
-            email: 'ellen@yahoo.com',
-            addID: 2,
-            addr: {id: 2, addr: '20 Broadway Ave', state: 'CA',country: 'US', postcode: 40443}
-          }
-        ]
-      )
-
-      oneToOne.end();
-    });
-
-    joins.test('deep', (deep) => {
-
-      const queryItems = ctx.queryItems({
-        table: 'users',
-        joins: [{
-          joinName: "home",
-          as: 'addr',
-          joins: [
-            'stateInfo'
-          ]
-        }]
-      });
-
-      /**
-       *       {name: 'California', code: 'CA'},
-       {name: 'Oregon', code: 'OR'},
-       */
-      deep.same(queryItems,
-        [
-          {
-            name: 'Bill Smith',
-            email: 'bill@google.com',
-            addID: 1,
-            addr: {id: 1, addr: '111 First Street', state: 'CA', country: 'US', postcode: 12345, stateInfo: {name: 'California', code: 'CA'},}
-          },
-          {
-            name: 'Sal Jones',
-            email: 'sal@yahoo.com',
-            addID: 3,
-            addr: {id: 3, addr: '333 Trinity Ave', state: 'OR', country: 'US', postcode: 72332, stateInfo: {name: 'Oregon', code: 'OR'},}
-          },
-          {name: 'Dave Clark', email: 'nosferatu@transylvania.com'},
-          {
-            name: 'Ellen Fisk',
-            email: 'ellen@yahoo.com',
-            addID: 2,
-            addr: {id: 2, addr: '20 Broadway Ave', state: 'CA',country: 'US', postcode: 40443, stateInfo: {name: 'California', code: 'CA'},}
-          }
-        ]
-      )
-
-      deep.end();
-    });
-    joins.end();
-  });
-
-  suite.test('where', (whereTest) => {
-    whereTest.test(eqTest => {
+  suite.test(eqTest => {
 
       const queryItems = ctx.queryItems({
         table: 'users',
@@ -179,7 +92,7 @@ tap.test('queries', (suite) => {
 
       eqTest.end();
     });
-    whereTest.test(reTest => {
+  suite.test(reTest => {
 
       const queryItems = ctx.queryItems({
         table: 'users',
@@ -195,7 +108,5 @@ tap.test('queries', (suite) => {
 
       reTest.end();
     });
-    whereTest.end();
-  })
   suite.end();
-});
+}, {skip: true});
