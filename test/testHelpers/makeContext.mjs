@@ -1,6 +1,6 @@
 
 
-module.exports = function makeContext (createContext, joinFreq)  {
+export default function makeContext (createContext, joinFreq)  {
   return createContext([{
     name: 'states',
     data: [
@@ -48,12 +48,12 @@ module.exports = function makeContext (createContext, joinFreq)  {
     joins: [
       {
         from: {
-          table: 'users',
+          tableName: 'users',
           key: 'addID',
           frequency: joinFreq.noneOrOne
         },
         to: {
-          table: 'addr',
+          tableName: 'addr',
           frequency: joinFreq.noneOrOne
         },
         name: 'home'
@@ -61,7 +61,7 @@ module.exports = function makeContext (createContext, joinFreq)  {
       {
         from: 'addr.state',
         to: {
-          table: 'states',
+          tableName: 'states',
           frequency: joinFreq.noneOrOne
         },
         name: 'stateInfo'

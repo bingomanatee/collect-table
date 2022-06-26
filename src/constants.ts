@@ -25,3 +25,22 @@ export enum tableRecordState {
   saved,
   deleted,
 }
+
+export enum binaryOperator {
+  matches = 'matches',
+  re = 're',
+  eq = '=',
+  gt = '>',
+  lt = '<',
+  gte = '>=',
+  lte = '<=',
+  ne = '!=',
+  same = 'same',
+}
+
+export enum booleanOperator {
+  and = '&',
+  or = '||',
+}
+
+export const whereValueKey = Symbol('value');

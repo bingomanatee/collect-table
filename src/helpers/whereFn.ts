@@ -1,93 +1,148 @@
-import {create} from '@wonderlandlabs/collect';
-import eq from 'lodash.isequal';
-import {queryDef, tableRecordObj} from "../types";
+import { enums, create } from '@wonderlandlabs/collect';
+import isEqual from 'lodash.isequal';
+import { binaryTestObj, queryDef, recordTestFn, tableRecordObj, whereTerm, whereUnionObj } from "../types";
+import { binaryOperator, booleanOperator } from "../constants";
 
+const {FormEnum} = enums;
 
-export default function whereFn(query: queryDef) {
-  let out = (_record: tableRecordObj) => false;
+const noopFn = (_record: tableRecordObj) => true;
+
+export default function whereFn(query: queryDef) : recordTestFn {
   if (!query.where) {
-    return out;
+    return noopFn;
   }
+  return whereClauseFn(query.where);
+}
+
+function isTestFn(clause: whereTerm): clause is recordTestFn {
+  return typeof clause === 'function';
+}
+
+function isUnion(clause: whereTerm): clause is whereUnionObj {
+  return (create(clause).form === FormEnum.object) && 'bool' in clause;
+}
+
+function isBinary(clause: whereTerm): clause is binaryTestObj {
+  return (create(clause).form === FormEnum.object) && 'test' in clause;
+}
+
+const whereClauseFn = (term: whereTerm) : recordTestFn => {
+  if (isTestFn(term)) {
+    return term;
+  }
+  if (isUnion(term)) {
+    return whereUnionFn(term);
+  }
+  if (isBinary(term)) {
+    return binaryFn(term);
+  }
+  return noopFn;
+}
+
+const whereUnionFn = (term: whereUnionObj) : recordTestFn => {
+  const {
+    tests,
+    bool
+  } = term;
+
+  const termTests = create(tests).map(whereClauseFn);
+  if (termTests.size < 1) {
+    return noopFn;
+  }
+
+  return (record: tableRecordObj) : boolean => {
+    switch (bool) {
+      case booleanOperator.and:
+        return termTests.map((test) => test(record)).every();
+        break;
+
+      case booleanOperator.or:
+        return termTests.reduce((memo, test, _s, stopper) => {
+          const result = test(record);
+          if (!result) {
+            stopper.final();
+            return false;
+          }
+          return memo;
+        }, true);
+        break;
+
+      default:
+        return true;
+    }
+  }
+}
+
+type innerBinaryFn = (recordTerm: any, recordAgainst: any, record: tableRecordObj) => boolean;
+
+function compareRegExp(recordTerm, recordAgainst, record, term) {
+  // @ts-ignore
+  if (typeof recordTerm !== 'string') {
+    // eslint-disable-next-line no-param-reassign
+    recordTerm = String(recordTerm);
+  }
+  // @ts-ignore
+  if (typeof recordAgainst === 'string') {
+    // eslint-disable-next-line no-param-reassign
+    recordAgainst = new RegExp(recordAgainst);
+  }
+  if (!(recordAgainst instanceof RegExp)) {
+    console.warn('term re test: against not a regExp; record', record, 'term:', term);
+    return false;
+  }
+  return recordAgainst.test(recordTerm);
+}
+
+const binaryFn = (term: binaryTestObj) => {
   let {
     // eslint-disable-next-line prefer-const
-    test, against, field
-  } = query.where;
+    test, against, field, termFn, againstFn
+  } = term;
 
-  if (typeof test === 'function') {
-    return test;
-  }
+  let innerTest: innerBinaryFn = (_a, _b, _record) => true;
 
   switch (test) {
-
-    case 'matches':
-    case 're':
-      if (!(against instanceof RegExp)) {
-        if (typeof against === 'string') {
-          against = new RegExp(against);
-        }
-      }
-      out = (record: tableRecordObj) => {
-        let value = create(record.data).get(field);
-        if (typeof value !== 'string') {
-          value = String(value);
-        }
-        return against.test(value);
-      }
+    case binaryOperator.matches:
+    case binaryOperator.re:
+      innerTest = (recordTerm, recordAgainst, record) => compareRegExp(recordTerm, recordAgainst, record, term)
       break;
 
-    case '!=':
-    case 'ne':
-    case 'not':
-      out = (record: tableRecordObj) => {
-        const value = create(record.data).get(field);
-        return !eq(value, against);
-      }
+    case binaryOperator.ne:
+      // eslint-disable-next-line no-case-declarations
+      innerTest = (recordTerm, recordAgainst) => recordTerm !== recordAgainst;
+   break;
+
+    case binaryOperator.eq:
+      innerTest = (recordTerm, recordAgainst) => recordTerm === recordAgainst;
       break;
 
-    case '=':
-    case 'eq':
-    case '<>':
-      out = (record: tableRecordObj) => {
-        const value = create(record.data).get(field);
-        return eq(value, against);
-      }
+    case binaryOperator.gt:
+      innerTest = (recordTerm, recordAgainst) => recordTerm > recordAgainst;
       break;
 
-    case '>':
-    case 'gt':
-      out = (record: tableRecordObj) => {
-        const value = create(record.data).get(field);
-        return value > against;
-      }
+    case binaryOperator.lt:
+      innerTest = (recordTerm, recordAgainst) => recordTerm < recordAgainst;
       break;
 
-    case '<':
-    case 'lt':
-      out = (record: tableRecordObj) => {
-        const value = create(record.data).get(field);
-        return value < against;
-      }
+    case binaryOperator.gte:
+      innerTest = (recordTerm, recordAgainst) => recordTerm >= recordAgainst;
       break;
 
-    case '>=':
-    case 'gte':
-      out = (record: tableRecordObj) => {
-        const value = create(record.data).get(field);
-        return value > against || eq(value, against);
-      }
+    case binaryOperator.lte:
+      innerTest = (recordTerm, recordAgainst) => recordTerm <= recordAgainst;
       break;
 
-    case '<=':
-    case 'lte':
-      out = (record: tableRecordObj) => {
-        const value = create(record.data).get(field);
-        return value < against || eq(value, against);
-      }
+    case binaryOperator.same:
+      innerTest = isEqual;
       break;
 
     default:
-      console.warn('cannot test with ', query.where, 'unknown test type')
+      console.warn('cannot test with ', test, 'unknown test type')
   }
 
-  return out;
+  return (record) => {
+    const recordTerm = termFn? termFn(record) : record.get(field);
+    const againstTerm = againstFn? againstFn(record) : against;
+    return innerTest(recordTerm, againstTerm, record);
+  };
 }

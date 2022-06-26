@@ -1,7 +1,7 @@
 /* eslint-disable no-use-before-define */
 import EventEmitter from 'emitix';
 import type { collectionObj } from '@wonderlandlabs/collect';
-import { changePhases, joinFreq } from "./constants";
+import { binaryOperator, booleanOperator, changePhases, joinFreq } from "./constants";
 
 // ------------- MICRO DEFS
 
@@ -13,16 +13,7 @@ export type tableRecordMetaObj = {
   helpers?: helperMap;
   joins?: stringMap;
 }
-export type queryCollection = collectionObj<anyMap, any, tableRecordObj>;
 // ------ joinedRecords
-
-// this defines one "end" of a join - a pointer to the target, or the source.
-export type joinConnObj = {
-  table: string;
-  key?: string;
-  joinTableKey?: string;
-  frequency?: joinFreq;
-};
 
 
 export type joinDefObj = {
@@ -30,6 +21,24 @@ export type joinDefObj = {
   from: joinConnObj;
   to: joinConnObj;
 };
+
+// ---- dataset
+
+export type dataSetSelectorFn = (keys: any[], source: mapCollection, ds: dataSetObj) => any[];
+export type dataSetReducerFn = (data: mapCollection, ds: dataSetObj) => any;
+export type dataSetMapFn = (data: tableRecordObj, ds: dataSetObj) => mapCollection;
+export type dataSetParams = {
+  context: contextObj,
+  sourceTable: string,
+  source?: mapCollection,
+  keys?: any[],
+  reducer?: dataSetReducerFn,
+  data?: mapCollection,
+  selector?: dataSetSelectorFn,
+  map?: dataSetMapFn,
+  meta?: any,
+  value?: any
+}
 
 // ----- parameter defs
 
@@ -53,10 +62,44 @@ export type contextOptionsObj = {
 // -------------- functions
 
 export type recordCreatorFn = (table: tableObj, data: any, key?: any) => any;
-export type keyProviderFn = ( target: any, table: tableObj,meta?: any) => any;
+export type keyProviderFn = ( target: any, table: tableObj,meta?: any) => any[];
 export type joinFn = (record: tableRecordObj,  args?: any) => any;
+export type recordFn = (tableRecordObj) => any;
+export type recordTestFn = (tableRecordObj) => boolean;
 
-// --- query
+// --- query : where
+
+export type whereTerm = recordTestFn | binaryTestObj | whereUnionObj;
+
+type RequireAtLeastOne<T, Keys extends keyof T = keyof T> =
+  Pick<T, Exclude<keyof T, Keys>>
+  & {
+  [K in Keys]-?: Required<Pick<T, K>> & Partial<Pick<T, Exclude<Keys, K>>>
+}[Keys]
+
+type binaryTestObjBase = {
+  termFn?: recordFn;
+  field?: string;
+  test: binaryOperator;
+  against?: any;
+  againstFn?: recordFn;
+};
+
+type binaryTestObjB2 = RequireAtLeastOne<binaryTestObjBase, 'termFn' | 'field'>;
+export type binaryTestObj = RequireAtLeastOne<binaryTestObjB2, 'against' | 'againstFn'>;
+
+export type whereUnionObj = {
+  tests: whereTerm[];
+  bool: booleanOperator;
+};
+
+// ----- query
+
+// this defines one "end" of a join - a pointer to the target, or the source.
+export type joinConnObj = {
+  frequency?: joinFreq;
+  as?: string;
+} & queryDef;
 
 export type queryJoinDef = {
   joinName?: string;
@@ -64,20 +107,24 @@ export type queryJoinDef = {
   connections?: joinConnObj[]
 } & queryDef;
 
-export type whereObj = {
-  field?: string;
-  test: string | ((tableRecordObj) => boolean);
-  against?: any;
-}
-
 export type queryDef = {
-  table: string;
+  tableName: string;
   key?: any;
-  where?: whereObj;
-  joins?: Map<string, queryJoinDef>;
+  where?: whereTerm;
+  joins?: queryJoinDef[];
 }
 
 // -------------- CORE OBJECTS
+
+export type dataSetObj = {
+  context: contextObj;
+  source: mapCollection;
+  keys: any[];
+  selected: mapCollection;
+  data: mapCollection;
+  value: mapCollection;
+  tableName: string;
+}
 
 export type contextObj = {
   transact: (fn: (changesObj) => any) => any;
@@ -89,7 +136,7 @@ export type contextObj = {
   lastChange: changeObj | undefined;
   restoreTable(name: string, table: mapCollection);
   joins: collectionObj<Map<string, joinDefObj>, string, joinDefObj>;
-  query: (query: queryDef) => queryCollection;
+  query: (query: queryDef) => dataSetObj;
   queryItems: (query: queryDef) => any[];
   activeChanges: collectionObj<changeObj[],number,changeObj>;
 } & EventEmitter;
@@ -104,7 +151,7 @@ export type tableObj = {
   recordForKey: (key: any, meta?: tableRecordMetaObj) => tableRecordObj;
   context: contextObj;
   restore: (store: anyMap) => tableObj;
-  query: (query: queryDef) => queryCollection;
+  query: (query: queryDef) => dataSetObj;
 } & EventEmitter;
 
 export type dataContextObj = {
@@ -133,9 +180,9 @@ export type changeObj = {
 export type tableRecordObj = {
   data: any;
   tableName: string;
-  key?: any;
-  joinedRecords: Map<any, joinResult | undefined>;
+  key: any;
   table: tableObj;
   context: contextObj;
-  readonly value: any; // data merged with joinedRecords;
+  get: (field: any) => any;
+  exists: boolean;
 }

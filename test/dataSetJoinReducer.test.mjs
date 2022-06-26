@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-ignore */
 import tap from 'tap';
 import pkg from '../dist/index.js';
-import makeContext from "./testHelpers/makeContext";
+import makeContext from "./testHelpers/makeContext.mjs";
 const {
   default: createContext,
   DataSet,
@@ -37,7 +37,16 @@ tap.test('dataSetJoinReducer', suite => {
 
       const addrKeys = keysForJoin(helper, ds, query);
 
-      console.log('addrKeys: ', addrKeys);
+      const data = addrKeys.data;
+
+      data.store.forEach((keys, key) => {
+        const user = ctx.table('users').getData(key);
+        if (user.addID) {
+          kfj.same(user.addID, keys[0]);
+        } else {
+          kfj.same(keys, []);
+        }
+      })
 
     kfj.end();
   });

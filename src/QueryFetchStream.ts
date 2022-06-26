@@ -1,10 +1,26 @@
-import { BehaviorSubject, filter } from "rxjs";
+import { BehaviorSubject, map, distinctUntilChanged } from "rxjs";
+import isEqual from 'lodash.isequal';
 import { contextObj, queryDef } from "./types";
+import TableRecord from "./helpers/TableRecord";
+
+function queryValueOf(q) {
+  if (q instanceof TableRecord) {
+    return q.data;
+  }
+  if (Array.isArray(q)) {
+    return q.map(queryValueOf);
+  }
+  return q;
+}
 
 function listen(context, query) {
   const subject = new BehaviorSubject(context);
 
-  const response = subject.pipe(filter((currentContext) => currentContext.query(query)));
+  const response = subject.pipe(
+    map((currentContext) => currentContext.query(query)),
+    map(queryValueOf),
+    distinctUntilChanged(isEqual)
+  );
 
   context.on('change-complete', (change) => {
     if (!(context.activeChanges.size ===1 && context.lastChange === change)) {

@@ -4,17 +4,18 @@ import EventEmitter from "emitix";
 
 import type {
   addDataMetaObj, anyMap,
-  contextObj,
+  contextObj, dataSetObj,
   keyProviderFn,
-  mapCollection, queryCollection,
+  mapCollection,
   queryDef,
   recordCreatorFn,
   tableObj,
-  tableOptionsObj, tableRecordMetaObj
+  tableOptionsObj
 } from './types';
 import TableRecord from "./helpers/TableRecord";
-import TableRecordJoin from "./helpers/TableRecordJoin";
+import DataSet from "./DataSet";
 import whereFn from "./helpers/whereFn";
+import dataSetJoinReducer from "./helpers/dataSetJoinReducer";
 
 const { e } = utils;
 
@@ -110,8 +111,8 @@ export class CollectionTable extends EventEmitter implements tableObj {
     return this.data.hasKey(key);
   }
 
-  public recordForKey(key, meta?: tableRecordMetaObj) {
-    return new TableRecord(this.context, {table: this.name, key}, meta);
+  public recordForKey(key) {
+    return new TableRecord(this.context, this.name, key);
   }
 
   /**
@@ -183,7 +184,7 @@ export class CollectionTable extends EventEmitter implements tableObj {
         action: 'newData',
         input: [recordInstance, meta]
       })
-      throw e('cannot make a table record without a key or keyProvider', {
+      throw e('cannot make a tableName record without a key or keyProvider', {
         record: recordInstance, table: this, meta
       });
     }
@@ -192,39 +193,29 @@ export class CollectionTable extends EventEmitter implements tableObj {
 
   // -------------------------- query
 
-  query(query: queryDef): queryCollection {
-    if (query.table !== this.name) {
+  query(query: queryDef): dataSetObj {
+    if (query.tableName !== this.name) {
       throw e('badly targeted query; ', { query, table: this });
     }
 
-    const joinHelpers = create(new Map());
-    query.joins?.forEach((qjd) => {
-      const trJoin = new TableRecordJoin(this.context, qjd);
-      joinHelpers.set(qjd, trJoin);
-    });
-
-    const meta = {helpers: joinHelpers, joins: query.joins};
-    const base = ('key' in query) ? [this.recordForKey(query.key, meta)] : this.data.keys
-      .map((key) => this.recordForKey(key, meta));
-
-    const records = create(base);
-
+    let querySelector;
     if (query.where) {
-      records.filter(whereFn(query));
+      const whereTest = whereFn(query);
+      querySelector = (keys) => keys.filter((oKey) => whereTest(this.recordForKey(oKey)))
     }
 
-    return records;
-  }
-
-  queryItems(query: queryDef): any[] {
-    const result = this.query(query);
-    return result? result.items.map(record => record.value) : [];
+    return new DataSet({
+      sourceTable: this.name,
+      selector: querySelector,
+      context: this.context,
+      reducer: query.joins? dataSetJoinReducer(query) : undefined
+    });
   }
 
   /*
 
 export type joinConnObj = {
-  table: string;
+  tableName: string;
   key?: string;
   joinTableKey?: string;
   frequency?: joinFreq;
@@ -245,7 +236,7 @@ export type joinDefObj = {
 export type queryJoinDef = {
   joinName?: string;
   join: joinFn;
-  table?: string;
+  tableName?: string;
   where?: string;
   as?: string;
   args? : any[];

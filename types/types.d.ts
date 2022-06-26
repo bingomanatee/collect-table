@@ -15,6 +15,21 @@ declare enum joinFreq {
     noneOrMore = "noneOrMore",
     oneOrMore = "oneOrMore"
 }
+declare enum binaryOperator {
+    matches = "matches",
+    re = "re",
+    eq = "=",
+    gt = ">",
+    lt = "<",
+    gte = ">=",
+    lte = "<=",
+    ne = "!=",
+    same = "same"
+}
+declare enum booleanOperator {
+    and = "&",
+    or = "||"
+}
 
 declare type helperMap = Map<queryJoinDef, tableRecordJoinObj>;
 declare type anyMap = Map<any, any>;
@@ -24,17 +39,25 @@ declare type tableRecordMetaObj = {
     helpers?: helperMap;
     joins?: stringMap;
 };
-declare type queryCollection = collectionObj<anyMap, any, tableRecordObj>;
-declare type joinConnObj = {
-    table: string;
-    key?: string;
-    joinTableKey?: string;
-    frequency?: joinFreq;
-};
 declare type joinDefObj = {
     name?: string;
     from: joinConnObj;
     to: joinConnObj;
+};
+declare type dataSetSelectorFn = (keys: any[], source: mapCollection, ds: dataSetObj) => any[];
+declare type dataSetReducerFn = (data: mapCollection, ds: dataSetObj) => any;
+declare type dataSetMapFn = (data: tableRecordObj, ds: dataSetObj) => mapCollection;
+declare type dataSetParams = {
+    context: contextObj;
+    sourceTable: string;
+    source?: mapCollection;
+    keys?: any[];
+    reducer?: dataSetReducerFn;
+    data?: mapCollection;
+    selector?: dataSetSelectorFn;
+    map?: dataSetMapFn;
+    meta?: any;
+    value?: any;
 };
 declare type joinResult = tableRecordObj | tableRecordObj[] | undefined;
 declare type tableOptionsObj = {
@@ -55,23 +78,50 @@ declare type contextOptionsObj = {
     joins?: joinDefObj[];
 };
 declare type recordCreatorFn = (table: tableObj, data: any, key?: any) => any;
-declare type keyProviderFn = (target: any, table: tableObj, meta?: any) => any;
+declare type keyProviderFn = (target: any, table: tableObj, meta?: any) => any[];
 declare type joinFn = (record: tableRecordObj, args?: any) => any;
+declare type recordFn = (tableRecordObj: any) => any;
+declare type recordTestFn = (tableRecordObj: any) => boolean;
+declare type whereTerm = recordTestFn | binaryTestObj | whereUnionObj;
+declare type RequireAtLeastOne<T, Keys extends keyof T = keyof T> = Pick<T, Exclude<keyof T, Keys>> & {
+    [K in Keys]-?: Required<Pick<T, K>> & Partial<Pick<T, Exclude<Keys, K>>>;
+}[Keys];
+declare type binaryTestObjBase = {
+    termFn?: recordFn;
+    field?: string;
+    test: binaryOperator;
+    against?: any;
+    againstFn?: recordFn;
+};
+declare type binaryTestObjB2 = RequireAtLeastOne<binaryTestObjBase, 'termFn' | 'field'>;
+declare type binaryTestObj = RequireAtLeastOne<binaryTestObjB2, 'against' | 'againstFn'>;
+declare type whereUnionObj = {
+    tests: whereTerm[];
+    bool: booleanOperator;
+};
+declare type joinConnObj = {
+    frequency?: joinFreq;
+    as?: string;
+} & queryDef;
 declare type queryJoinDef = {
     joinName?: string;
     as?: string;
     connections?: joinConnObj[];
 } & queryDef;
-declare type whereObj = {
-    field?: string;
-    test: string | ((tableRecordObj: any) => boolean);
-    against?: any;
-};
 declare type queryDef = {
-    table: string;
+    tableName: string;
     key?: any;
-    where?: whereObj;
-    joins?: Map<string, queryJoinDef>;
+    where?: whereTerm;
+    joins?: queryJoinDef[];
+};
+declare type dataSetObj = {
+    context: contextObj;
+    source: mapCollection;
+    keys: any[];
+    selected: mapCollection;
+    data: mapCollection;
+    value: mapCollection;
+    tableName: string;
 };
 declare type contextObj = {
     transact: (fn: (changesObj: any) => any) => any;
@@ -82,7 +132,7 @@ declare type contextObj = {
     lastChange: changeObj | undefined;
     restoreTable(name: string, table: mapCollection): any;
     joins: collectionObj<Map<string, joinDefObj>, string, joinDefObj>;
-    query: (query: queryDef) => queryCollection;
+    query: (query: queryDef) => dataSetObj;
     queryItems: (query: queryDef) => any[];
     activeChanges: collectionObj<changeObj[], number, changeObj>;
 } & EventEmitter;
@@ -96,7 +146,7 @@ declare type tableObj = {
     recordForKey: (key: any, meta?: tableRecordMetaObj) => tableRecordObj;
     context: contextObj;
     restore: (store: anyMap) => tableObj;
-    query: (query: queryDef) => queryCollection;
+    query: (query: queryDef) => dataSetObj;
 } & EventEmitter;
 declare type dataContextObj = {
     name: string;
@@ -121,11 +171,11 @@ declare type changeObj = {
 declare type tableRecordObj = {
     data: any;
     tableName: string;
-    key?: any;
-    joinedRecords: Map<any, joinResult | undefined>;
+    key: any;
     table: tableObj;
     context: contextObj;
-    readonly value: any;
+    get: (field: any) => any;
+    exists: boolean;
 };
 
-export { addDataMetaObj, anyMap, changeObj, contextObj, contextOptionsObj, dataContextObj, helperMap, joinConnObj, joinDefObj, joinFn, joinResult, keyProviderFn, mapCollection, queryCollection, queryDef, queryJoinDef, recordCreatorFn, stringMap, tableDefObj, tableObj, tableOptionsObj, tableRecordJoinObj, tableRecordMetaObj, tableRecordObj, whereObj };
+export { addDataMetaObj, anyMap, binaryTestObj, changeObj, contextObj, contextOptionsObj, dataContextObj, dataSetMapFn, dataSetObj, dataSetParams, dataSetReducerFn, dataSetSelectorFn, helperMap, joinConnObj, joinDefObj, joinFn, joinResult, keyProviderFn, mapCollection, queryDef, queryJoinDef, recordCreatorFn, recordFn, recordTestFn, stringMap, tableDefObj, tableObj, tableOptionsObj, tableRecordJoinObj, tableRecordMetaObj, tableRecordObj, whereTerm, whereUnionObj };
