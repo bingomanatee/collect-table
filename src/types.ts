@@ -177,6 +177,11 @@ export type changeObj = {
   isLive: boolean;
 };
 
+export type tableRecordValueObj = {
+  tableName: any,
+  key: any,
+  data: any,
+}
 export type tableRecordObj = {
   data: any;
   tableName: string;
@@ -185,4 +190,5 @@ export type tableRecordObj = {
   context: contextObj;
   get: (field: any) => any;
   exists: boolean;
+  value: tableRecordValueObj;
 }

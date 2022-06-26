@@ -168,6 +168,11 @@ declare type changeObj = {
     isActive: boolean;
     isLive: boolean;
 };
+declare type tableRecordValueObj = {
+    tableName: any;
+    key: any;
+    data: any;
+};
 declare type tableRecordObj = {
     data: any;
     tableName: string;
@@ -176,6 +181,7 @@ declare type tableRecordObj = {
     context: contextObj;
     get: (field: any) => any;
     exists: boolean;
+    value: tableRecordValueObj;
 };
 
-export { addDataMetaObj, anyMap, binaryTestObj, changeObj, contextObj, contextOptionsObj, dataContextObj, dataSetMapFn, dataSetObj, dataSetParams, dataSetReducerFn, dataSetSelectorFn, helperMap, joinConnObj, joinDefObj, joinFn, joinResult, keyProviderFn, mapCollection, queryDef, queryJoinDef, recordCreatorFn, recordFn, recordTestFn, stringMap, tableDefObj, tableObj, tableOptionsObj, tableRecordJoinObj, tableRecordMetaObj, tableRecordObj, whereTerm, whereUnionObj };
+export { addDataMetaObj, anyMap, binaryTestObj, changeObj, contextObj, contextOptionsObj, dataContextObj, dataSetMapFn, dataSetObj, dataSetParams, dataSetReducerFn, dataSetSelectorFn, helperMap, joinConnObj, joinDefObj, joinFn, joinResult, keyProviderFn, mapCollection, queryDef, queryJoinDef, recordCreatorFn, recordFn, recordTestFn, stringMap, tableDefObj, tableObj, tableOptionsObj, tableRecordJoinObj, tableRecordMetaObj, tableRecordObj, tableRecordValueObj, whereTerm, whereUnionObj };

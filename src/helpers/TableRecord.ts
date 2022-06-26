@@ -1,7 +1,7 @@
 import { enums, create } from '@wonderlandlabs/collect';
 import {
   contextObj,
-  tableRecordObj
+  tableRecordObj, tableRecordValueObj
 } from "../types";
 
 const {FormEnum} = enums;
@@ -57,5 +57,13 @@ export default class TableRecord implements tableRecordObj {
 
   get exists() {
     return (this._data !== undefined) || this.table.hasKey(this.key);
+  }
+
+  get value(): tableRecordValueObj {
+    return {
+      tableName: this.tableName,
+      key: this.key,
+      data: this.data
+    }
   }
 }

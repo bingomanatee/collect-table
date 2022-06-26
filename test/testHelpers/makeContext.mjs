@@ -6,6 +6,7 @@ export default function makeContext (createContext, joinFreq)  {
     data: [
       {name: 'California', code: 'CA'},
       {name: 'Oregon', code: 'OR'},
+      {name: 'Kentucky', code: 'KY'},
     ],
     'key': 'code',
   }, {
@@ -14,7 +15,8 @@ export default function makeContext (createContext, joinFreq)  {
       {name: 'Bill Smith', email: 'bill@google.com', addID: 1},
       {name: 'Sal Jones', email: 'sal@yahoo.com', addID: 3},
       {name: 'Dave Clark', email: 'nosferatu@transylvania.com'},
-      {name: 'Ellen Fisk', email: 'ellen@yahoo.com', addID: 2}
+      {name: 'Ellen Fisk', email: 'ellen@yahoo.com', addID: 2},
+      {name: 'Bob NoState', email: 'bob@yahoo.com', addID: 4}
     ]
   },
     {
@@ -40,6 +42,17 @@ export default function makeContext (createContext, joinFreq)  {
           state: 'OR',
           country: 'US',
           postcode: 72332
+        },
+        {
+          id: 4,
+          addr: '100 noState Lane',
+          postcode: 123213
+        },
+        {
+          id: 5,
+          addr: '50 nobodyLivesHere Lane',
+          postcode: 112345,
+          state: 'KY'
         }
       ],
 
@@ -59,7 +72,11 @@ export default function makeContext (createContext, joinFreq)  {
         name: 'home'
       },
       {
-        from: 'addr.state',
+        from: {
+          tableName: 'addr',
+          frequency: joinFreq.noneOrMore,
+          key: 'state'
+        },
         to: {
           tableName: 'states',
           frequency: joinFreq.noneOrOne

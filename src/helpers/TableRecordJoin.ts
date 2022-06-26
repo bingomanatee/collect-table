@@ -36,7 +36,7 @@ import {joinFreq} from "../constants";
 
   _fromContext() {
     if (!this.context.joins.hasKey(this.joinName)) {
-      console.error('cannot find ', this.joinName, 'in', this.context.joins.store);
+      console.error('cannot find ', this.joinName, 'in context', this.context.joins.store);
       throw new Error(`TableRecordJoin._performContextJoin join - bad join name ${  this.joinName}`);
     }
     const def: joinDefObj = this.context.joins.get(this.joinName);
@@ -47,7 +47,7 @@ import {joinFreq} from "../constants";
       this.localConn = def.to;
       this.foreignConn = def.from;
     } else {
-      console.warn('cannot find tableName', this.tableName, 'in', def);
+      console.warn('fromContext: cannot find tableName', this.tableName, 'in joinDef', def);
     }
   }
 
