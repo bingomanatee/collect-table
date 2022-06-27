@@ -1,6 +1,14 @@
-import { enums, create } from '@wonderlandlabs/collect';
+import { create, enums } from '@wonderlandlabs/collect';
 import isEqual from 'lodash.isequal';
-import { binaryTestObj, queryDef, recordTestFn, tableRecordObj, whereTerm, whereUnionObj } from "../types";
+import {
+  binaryTestObj,
+  innerBinaryFn,
+  queryDef,
+  recordTestFn,
+  tableRecordObj,
+  whereTerm,
+  whereUnionObj
+} from "../types";
 import { binaryOperator, booleanOperator } from "../constants";
 
 const {FormEnum} = enums;
@@ -73,7 +81,9 @@ const whereUnionFn = (term: whereUnionObj) : recordTestFn => {
   }
 }
 
-type innerBinaryFn = (recordTerm: any, recordAgainst: any, record: tableRecordObj) => boolean;
+function eqTest(recordTerm, recordAgainst) {
+  return recordTerm === recordAgainst;
+}
 
 function compareRegExp(recordTerm, recordAgainst, record, term) {
   // @ts-ignore
@@ -93,56 +103,82 @@ function compareRegExp(recordTerm, recordAgainst, record, term) {
   return recordAgainst.test(recordTerm);
 }
 
+function sameTest (a, b) {
+  return isEqual(a, b);
+}
+
+function gtTest(recordTerm, recordAgainst) {
+  return recordTerm > recordAgainst;
+}
+
+function lessThanTest(recordTerm, recordAgainst) {
+  return recordTerm < recordAgainst;
+}
+
+function gteTest(recordTerm, recordAgainst) {
+  return recordTerm >= recordAgainst;
+}
+
+function lteTest(recordTerm, recordAgainst) {
+  return recordTerm <= recordAgainst;
+}
+
+function binaryAlwaysTrue(_a, _b, term) {
+  console.log('--- default test hit - should never happen; term is', term);
+  return true;
+}
+
 const binaryFn = (term: binaryTestObj) => {
   let {
     // eslint-disable-next-line prefer-const
     test, against, field, termFn, againstFn
   } = term;
 
-  let innerTest: innerBinaryFn = (_a, _b, _record) => true;
+  let innerTest: innerBinaryFn = binaryAlwaysTrue;
 
   switch (test) {
-    case binaryOperator.matches:
     case binaryOperator.re:
-      innerTest = (recordTerm, recordAgainst, record) => compareRegExp(recordTerm, recordAgainst, record, term)
+      innerTest = compareRegExp;
       break;
 
     case binaryOperator.ne:
-      // eslint-disable-next-line no-case-declarations
       innerTest = (recordTerm, recordAgainst) => recordTerm !== recordAgainst;
-   break;
+    break;
 
     case binaryOperator.eq:
-      innerTest = (recordTerm, recordAgainst) => recordTerm === recordAgainst;
+      innerTest = eqTest;
       break;
 
     case binaryOperator.gt:
-      innerTest = (recordTerm, recordAgainst) => recordTerm > recordAgainst;
+      innerTest = gtTest;
       break;
 
     case binaryOperator.lt:
-      innerTest = (recordTerm, recordAgainst) => recordTerm < recordAgainst;
+      innerTest = lessThanTest;
       break;
 
     case binaryOperator.gte:
-      innerTest = (recordTerm, recordAgainst) => recordTerm >= recordAgainst;
+      innerTest = gteTest;
       break;
 
     case binaryOperator.lte:
-      innerTest = (recordTerm, recordAgainst) => recordTerm <= recordAgainst;
+      innerTest = lteTest;
       break;
 
     case binaryOperator.same:
-      innerTest = isEqual;
+      innerTest = sameTest;
       break;
 
     default:
-      console.warn('cannot test with ', test, 'unknown test type')
+      throw new Error('bad test type');
   }
 
   return (record) => {
     const recordTerm = termFn? termFn(record) : record.get(field);
     const againstTerm = againstFn? againstFn(record) : against;
-    return innerTest(recordTerm, againstTerm, record);
+
+    // @ts-ignore
+    const result = innerTest(recordTerm, againstTerm, record, term);
+    return result;
   };
 }

@@ -77,6 +77,7 @@ declare type addDataMetaObj = {
 declare type contextOptionsObj = {
     joins?: joinDefObj[];
 };
+declare type innerBinaryFn = (recordTerm: any, recordAgainst: any, record: tableRecordObj, term: binaryTestObj) => boolean;
 declare type recordCreatorFn = (table: tableObj, data: any, key?: any) => any;
 declare type keyProviderFn = (target: any, table: tableObj, meta?: any) => any[];
 declare type joinFn = (record: tableRecordObj, args?: any) => any;
@@ -184,4 +185,4 @@ declare type tableRecordObj = {
     value: tableRecordValueObj;
 };
 
-export { addDataMetaObj, anyMap, binaryTestObj, changeObj, contextObj, contextOptionsObj, dataContextObj, dataSetMapFn, dataSetObj, dataSetParams, dataSetReducerFn, dataSetSelectorFn, helperMap, joinConnObj, joinDefObj, joinFn, joinResult, keyProviderFn, mapCollection, queryDef, queryJoinDef, recordCreatorFn, recordFn, recordTestFn, stringMap, tableDefObj, tableObj, tableOptionsObj, tableRecordJoinObj, tableRecordMetaObj, tableRecordObj, tableRecordValueObj, whereTerm, whereUnionObj };
+export { addDataMetaObj, anyMap, binaryTestObj, changeObj, contextObj, contextOptionsObj, dataContextObj, dataSetMapFn, dataSetObj, dataSetParams, dataSetReducerFn, dataSetSelectorFn, helperMap, innerBinaryFn, joinConnObj, joinDefObj, joinFn, joinResult, keyProviderFn, mapCollection, queryDef, queryJoinDef, recordCreatorFn, recordFn, recordTestFn, stringMap, tableDefObj, tableObj, tableOptionsObj, tableRecordJoinObj, tableRecordMetaObj, tableRecordObj, tableRecordValueObj, whereTerm, whereUnionObj };

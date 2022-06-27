@@ -61,6 +61,7 @@ export type contextOptionsObj = {
 
 // -------------- functions
 
+export type innerBinaryFn = (recordTerm: any, recordAgainst: any, record: tableRecordObj, term: binaryTestObj) => boolean;
 export type recordCreatorFn = (table: tableObj, data: any, key?: any) => any;
 export type keyProviderFn = ( target: any, table: tableObj,meta?: any) => any[];
 export type joinFn = (record: tableRecordObj,  args?: any) => any;

@@ -201,7 +201,11 @@ export class CollectionTable extends EventEmitter implements tableObj {
     let querySelector;
     if (query.where) {
       const whereTest = whereFn(query);
-      querySelector = (keys) => keys.filter((oKey) => whereTest(this.recordForKey(oKey)))
+      querySelector = (keys) => keys.filter((oKey) => {
+        const record = this.recordForKey(oKey);
+        const out = whereTest(record);
+        return out;
+      })
     }
 
     return new DataSet({

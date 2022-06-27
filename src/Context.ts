@@ -149,6 +149,6 @@ export default class Context extends EventEmitter implements contextObj {
 
   queryItems(query: queryDef) {
     const result = this.query(query);
-    return result? result.items.map(record => record.value) : [];
+    return result? result.value.items.map(record => record.value) : [];
   }
 }

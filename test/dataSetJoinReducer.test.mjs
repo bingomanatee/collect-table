@@ -162,8 +162,6 @@ tap.test('dataSetJoinReducer', suite => {
       reducer
     });
 
-    console.log("dataset value:", JSON.stringify(ds.value.items));
-
     dsr.same(new Set(ds.value.items), new Set(
       [{
         "name": "Bill Smith",
