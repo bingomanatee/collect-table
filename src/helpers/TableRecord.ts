@@ -10,7 +10,7 @@ const { FormEnum } = enums;
 /**
  * a bundled pointer to a record in a tableName.
  * In some contexts, data is deterministic from the constructor;
- * if not defined, it is read from the table.
+ * if not defined (the normal use case) it is read from the table with every call to `.data`.
  */
 export default class TableRecord implements tableRecordObj {
   constructor(context: contextObj, tableName: string, key: any, data?: any) {
@@ -41,12 +41,11 @@ export default class TableRecord implements tableRecordObj {
     return this.table.getData(this.key);
   }
 
-
   get(field): any {
     if (!this.exists) {
       return undefined;
     }
-    const coll = create(this.data);
+    const {coll} = this;
     if (coll.form === FormEnum.scalar) {
       console.warn('attempt to get a field', field,
         'from scalar', this);
@@ -55,21 +54,29 @@ export default class TableRecord implements tableRecordObj {
     return coll.get(field);
   }
 
+  private get coll() {
+    const {data} = this;
+    return !isCollection(data) ?  create(data) : data;
+  }
+
   set(field, value) {
-    const itemColl = isCollection(this.data) ? this.data : create(this.data);
-    if (itemColl.form === FormEnum.scalar) {
+    const {coll} = this;
+    if (coll.form === FormEnum.scalar) {
       return;
     }
     if (typeof value === 'function') {
-      itemColl.set(field, value(this.data, this.key));
+      coll.set(field, value(this.data, this.key));
     }
-    itemColl.set(field, value);
+    coll.set(field, value);
   }
 
   get exists() {
     return (this._data !== undefined) || this.table.hasKey(this.key);
   }
 
+  /**
+   * a JSON of this item; data is permamantly read into the return result.
+   */
   get value(): tableRecordValueObj {
     return {
       tableName: this.tableName,
