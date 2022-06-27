@@ -16,6 +16,7 @@ import TableRecord from "./helpers/TableRecord";
 import DataSet from "./DataSet";
 import whereFn from "./helpers/whereFn";
 import dataSetJoinReducer from "./helpers/dataSetJoinReducer";
+import { isCollection } from "./typeGuards";
 
 const { e } = utils;
 
@@ -116,9 +117,9 @@ export class CollectionTable extends EventEmitter implements tableObj {
   }
 
   /**
-   * the "put" method. key can be explicit (in meta
-   * @param data {any} ideally, a compound
-   * @param meta {addDataMetaObj}
+   * the "put" method. key can be explicit
+   * @param data {any} the value (or seed) for the item
+   * @param meta {addDataMetaObj} any other values that the key/data factories need
    *
    */
   public addData(data: any, meta?: addDataMetaObj): tableRecordObj {
@@ -149,6 +150,54 @@ export class CollectionTable extends EventEmitter implements tableObj {
       }
       throw err;
     }
+  }
+
+  public queryEach(query, action) {
+    this.transact(() => {
+      const dataSet = this.query(query);
+
+      dataSet.value.forEach((item, key) =>{
+        if (item instanceof TableRecord) {
+          action(item, this.context, this);
+        } else {
+          action(this.recordForKey(key), this.context, this);
+        }
+      })
+    });
+  }
+
+  set(key, field, value) {
+    this.recordForKey(key).set(field, value);
+  }
+
+  setMany(keys, field, value) {
+    this.transact(() => {
+      let coll = keys;
+      if (typeof keys === "function") {
+        this.data.cloneShallow.filter(keys).forEach((_i, iKey) => {
+          this.recordForKey(iKey).set(field, value);
+        });
+
+      } else {
+        if (!isCollection(keys)) {
+          coll = create(keys);
+        }
+        coll.forEach((key) => {
+          this.recordForKey(key).set(field, value);
+        });
+      }
+    })
+  }
+
+  remove(key) {
+    if (typeof key === 'function') {
+      this.data.filter((_i, iKey) => !key(this.recordForKey(iKey)))
+    }
+    this.data.deleteKey(key);
+  }
+
+  removeItem(item) {
+    this.data.deleteItem(item);
   }
 
   public keyProvider: keyProviderFn = () => KeyProviders.Default(this);

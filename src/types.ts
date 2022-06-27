@@ -67,6 +67,7 @@ export type keyProviderFn = ( target: any, table: tableObj,meta?: any) => any[];
 export type joinFn = (record: tableRecordObj,  args?: any) => any;
 export type recordFn = (tableRecordObj) => any;
 export type recordTestFn = (tableRecordObj) => boolean;
+export type queryEachFn = (record: tableRecordValueObj, ctx: contextObj, table: tableObj) => any;
 
 // --- query : where
 
@@ -153,6 +154,8 @@ export type tableObj = {
   context: contextObj;
   restore: (store: anyMap) => tableObj;
   query: (query: queryDef) => dataSetObj;
+  queryEach: (query: queryDef, action: queryEachFn) => void;
+  setMany: (keys, field, value) => void;
 } & EventEmitter;
 
 export type dataContextObj = {
@@ -190,6 +193,7 @@ export type tableRecordObj = {
   table: tableObj;
   context: contextObj;
   get: (field: any) => any;
+  set: (field: any, value: any) => void;
   exists: boolean;
   value: tableRecordValueObj;
 }

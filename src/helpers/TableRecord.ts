@@ -3,8 +3,9 @@ import {
   contextObj,
   tableRecordObj, tableRecordValueObj
 } from "../types";
+import { isCollection } from '../typeGuards';
 
-const {FormEnum} = enums;
+const { FormEnum } = enums;
 
 /**
  * a bundled pointer to a record in a tableName.
@@ -12,7 +13,7 @@ const {FormEnum} = enums;
  * if not defined, it is read from the table.
  */
 export default class TableRecord implements tableRecordObj {
-  constructor(context: contextObj, tableName: string, key: any, data? : any) {
+  constructor(context: contextObj, tableName: string, key: any, data?: any) {
     this.context = context;
     this.key = key;
     this.tableName = tableName;
@@ -41,18 +42,28 @@ export default class TableRecord implements tableRecordObj {
   }
 
 
-
   get(field): any {
     if (!this.exists) {
       return undefined;
     }
     const coll = create(this.data);
-    if (coll.form === FormEnum.scalar){
+    if (coll.form === FormEnum.scalar) {
       console.warn('attempt to get a field', field,
         'from scalar', this);
       return undefined;
     }
     return coll.get(field);
+  }
+
+  set(field, value) {
+    const itemColl = isCollection(this.data) ? this.data : create(this.data);
+    if (itemColl.form === FormEnum.scalar) {
+      return;
+    }
+    if (typeof value === 'function') {
+      itemColl.set(field, value(this.data, this.key));
+    }
+    itemColl.set(field, value);
   }
 
   get exists() {

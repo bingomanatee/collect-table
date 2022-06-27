@@ -1,23 +1,7 @@
-import { BehaviorSubject, map, distinctUntilChanged } from "rxjs";
+import { BehaviorSubject, distinctUntilChanged, map } from "rxjs";
 import isEqual from 'lodash.isequal';
-import type { collectionObj } from "@wonderlandlabs/collect/types/types";
 import { contextObj, queryDef } from "./types";
-
-import DataSet from "./DataSet";
-
-function isCollection(item): item is collectionObj<any, any, any> {
-  return (item && (typeof item === 'object')
-    && ('store' in item)
-    && ('form' in item)
-    && ('type' in item)
-    && ('items' in item)
-    && ('keys' in item)
-  )
-}
-
-function isDataSet(item): item is DataSet {
-  return item instanceof DataSet;
-}
+import { isCollection, isDataSet } from "./typeGuards";
 
 function queryValueOf(q) {
   if (isDataSet(q)) {

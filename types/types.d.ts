@@ -83,6 +83,7 @@ declare type keyProviderFn = (target: any, table: tableObj, meta?: any) => any[]
 declare type joinFn = (record: tableRecordObj, args?: any) => any;
 declare type recordFn = (tableRecordObj: any) => any;
 declare type recordTestFn = (tableRecordObj: any) => boolean;
+declare type queryEachFn = (record: tableRecordValueObj, ctx: contextObj, table: tableObj) => any;
 declare type whereTerm = recordTestFn | binaryTestObj | whereUnionObj;
 declare type RequireAtLeastOne<T, Keys extends keyof T = keyof T> = Pick<T, Exclude<keyof T, Keys>> & {
     [K in Keys]-?: Required<Pick<T, K>> & Partial<Pick<T, Exclude<Keys, K>>>;
@@ -148,6 +149,8 @@ declare type tableObj = {
     context: contextObj;
     restore: (store: anyMap) => tableObj;
     query: (query: queryDef) => dataSetObj;
+    queryEach: (query: queryDef, action: queryEachFn) => void;
+    setMany: (keys: any, field: any, value: any) => void;
 } & EventEmitter;
 declare type dataContextObj = {
     name: string;
@@ -181,8 +184,9 @@ declare type tableRecordObj = {
     table: tableObj;
     context: contextObj;
     get: (field: any) => any;
+    set: (field: any, value: any) => void;
     exists: boolean;
     value: tableRecordValueObj;
 };
 
-export { addDataMetaObj, anyMap, binaryTestObj, changeObj, contextObj, contextOptionsObj, dataContextObj, dataCreatorFn, dataSetMapFn, dataSetObj, dataSetParams, dataSetReducerFn, dataSetSelectorFn, helperMap, innerBinaryFn, joinConnObj, joinDefObj, joinFn, joinResult, keyProviderFn, mapCollection, queryDef, queryJoinDef, recordFn, recordTestFn, stringMap, tableDefObj, tableObj, tableOptionsObj, tableRecordJoinObj, tableRecordMetaObj, tableRecordObj, tableRecordValueObj, whereTerm, whereUnionObj };
+export { addDataMetaObj, anyMap, binaryTestObj, changeObj, contextObj, contextOptionsObj, dataContextObj, dataCreatorFn, dataSetMapFn, dataSetObj, dataSetParams, dataSetReducerFn, dataSetSelectorFn, helperMap, innerBinaryFn, joinConnObj, joinDefObj, joinFn, joinResult, keyProviderFn, mapCollection, queryDef, queryEachFn, queryJoinDef, recordFn, recordTestFn, stringMap, tableDefObj, tableObj, tableOptionsObj, tableRecordJoinObj, tableRecordMetaObj, tableRecordObj, tableRecordValueObj, whereTerm, whereUnionObj };
