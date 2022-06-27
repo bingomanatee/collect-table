@@ -6,6 +6,7 @@ export function recordsForJoin(joinHelper: TableRecordJoin, keys, context: conte
   if (!keys) {
     return undefined;
   }
+
   const uniqueKeys = keys.reduce((memo, subKeys) => {
     if (subKeys) {
       subKeys.forEach((key) => memo.add(key));
@@ -13,11 +14,34 @@ export function recordsForJoin(joinHelper: TableRecordJoin, keys, context: conte
     return memo;
   }, new Set());
   const tableName = joinHelper.foreignConn?.tableName;
+
+  let map;
+  if (joinHelper.attachKey === 'home_addr') {
+    console.log('==================== joinHelper joinDef:', joinHelper.joinDef);
+  }
+
+  if (joinHelper.joinDef.joins) {
+    map = (record) => {
+
+      // @ts-ignore
+      const joins = [...joinHelper.joinDef.joins];
+      const query = {
+        tableName: record.tableName,
+        key: record.key,
+        joins
+      }
+
+      const subData = context.query(query);
+      return subData.value.firstItem;
+    }
+  }
+
   if (tableName && context.hasTable(tableName)) {
     return new DataSet({
       sourceTable: tableName,
       context,
       keys: uniqueKeys,
+      map
     });
   }
   return null;

@@ -30,7 +30,7 @@ import {joinFreq} from "../constants";
     return this.query.tableName;
   }
 
-  private joinDef: queryJoinDef;
+  public joinDef: queryJoinDef;
 
   private context: contextObj;
 

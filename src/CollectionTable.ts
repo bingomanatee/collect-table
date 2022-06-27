@@ -8,9 +8,9 @@ import type {
   keyProviderFn,
   mapCollection,
   queryDef,
-  recordCreatorFn,
+  dataCreatorFn,
   tableObj,
-  tableOptionsObj
+  tableOptionsObj, tableRecordObj
 } from './types';
 import TableRecord from "./helpers/TableRecord";
 import DataSet from "./DataSet";
@@ -37,7 +37,7 @@ export class CollectionTable extends EventEmitter implements tableObj {
 
   name: string;
 
-  protected recordCreator: recordCreatorFn | undefined;
+  protected dataCreator: dataCreatorFn | undefined;
 
   constructor(
     context: contextObj,
@@ -60,7 +60,7 @@ export class CollectionTable extends EventEmitter implements tableObj {
       this.keyProvider = (item) => create(item).get(options.key);
     }
     if (options?.recordCreator) {
-      this.recordCreator = options?.recordCreator;
+      this.dataCreator = options?.recordCreator;
     }
     if (options?.data) {
       this.addMany(options?.data);
@@ -100,7 +100,7 @@ export class CollectionTable extends EventEmitter implements tableObj {
         data.forEach((item) => {
           // @ts-ignore
           const tableRecord = Array.isArray(item) ? this.addData(...item) : this.addData(item);
-          result.set(tableRecord.key, tableRecord.record);
+          result.set(tableRecord.key, tableRecord.data);
         });
         return { result };
       }
@@ -121,7 +121,7 @@ export class CollectionTable extends EventEmitter implements tableObj {
    * @param meta {addDataMetaObj}
    *
    */
-  public addData(data: any, meta?: addDataMetaObj) {
+  public addData(data: any, meta?: addDataMetaObj): tableRecordObj {
     const preparedData = this.newData(data, meta);
 
     // if meta doesn't contain key, generate an auto-key from the keyProvider.
@@ -131,11 +131,7 @@ export class CollectionTable extends EventEmitter implements tableObj {
     this.emit('addData:before', preparedData, key, previous);
     this.data.set(key, preparedData);
     this.emit('addData:after', preparedData, key, previous);
-    return {
-      key,
-      record: preparedData,
-      previous
-    };
+    return this.recordForKey(key);
   }
 
   // ----------------- Transact
@@ -164,8 +160,8 @@ export class CollectionTable extends EventEmitter implements tableObj {
   protected newData(record: any, meta?: any) {
     let recordInstance = record;
 
-    if (this.recordCreator) {
-      recordInstance = this.recordCreator(this, record, meta);
+    if (this.dataCreator) {
+      recordInstance = this.dataCreator(this, record, meta);
     }
     return recordInstance;
   }

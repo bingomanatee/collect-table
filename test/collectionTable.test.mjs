@@ -34,8 +34,8 @@ tap.test('CollectionTable', (ct) => {
         recordCreator: userCreator
       });
 
-      const { record } = users.addData({ name: 'Bob Smith', email: 'bob@foo.com', junk: 'not included' });
-      rcTest.same(record, { name: 'Bob Smith', email: 'bob@foo.com' });
+      const { data } = users.addData({ name: 'Bob Smith', email: 'bob@foo.com', junk: 'not included' });
+      rcTest.same(data, { name: 'Bob Smith', email: 'bob@foo.com' });
       rcTest.throws(() => {
         users.addData({ name: 'Sam', email: 'sam@google.com' }); // name too short
       }, /no\/bad name/)

@@ -1,5 +1,6 @@
 import Context from "./Context";
 
+export {QueryFetchStream} from './QueryFetchStream';
 export * as dataSetJoinReducer from './helpers/dataSetJoinReducer';
 export { Context };
 export {DataSet} from './DataSet';
