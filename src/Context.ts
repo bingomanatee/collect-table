@@ -10,8 +10,9 @@ import {
   tableDefObj,
   tableOptionsObj,
 } from './types';
-import {CollectionTable} from './CollectionTable';
+import {Table} from './Table';
 import TableJoin from "./TableJoin";
+import QueryFetchStream from "./QueryFetchStream";
 
 export default class Context extends EventEmitter implements contextObj {
 
@@ -125,7 +126,7 @@ export default class Context extends EventEmitter implements contextObj {
    */
   table(name, options?: tableOptionsObj) {
     if (!this.tables.hasKey(name)) {
-      this.tables.set(name, new CollectionTable(this, name, options));
+      this.tables.set(name, new Table(this, name, options));
     }
     return this.tables.get(name);
   }
@@ -150,5 +151,9 @@ export default class Context extends EventEmitter implements contextObj {
   queryItems(query: queryDef) {
     const result = this.query(query);
     return result? result.value.items.map(record => record.value) : [];
+  }
+
+  stream(query: queryDef, listener) {
+    return new QueryFetchStream(this, query).subscribe(listener);
   }
 }

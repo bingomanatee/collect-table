@@ -75,7 +75,7 @@ export default class TableRecord implements tableRecordObj {
   }
 
   /**
-   * a JSON of this item; data is permamantly read into the return result.
+   * a JSON of this item.
    */
   get value(): tableRecordValueObj {
     return {

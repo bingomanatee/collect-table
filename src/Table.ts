@@ -17,6 +17,7 @@ import DataSet from "./DataSet";
 import whereFn from "./helpers/whereFn";
 import dataSetJoinReducer from "./helpers/dataSetJoinReducer";
 import { isCollection } from "./typeGuards";
+import QueryFetchStream from "./QueryFetchStream";
 
 const { e } = utils;
 
@@ -33,7 +34,7 @@ const KeyProviders = {
   },
 };
 
-export class CollectionTable extends EventEmitter implements tableObj {
+export class Table extends EventEmitter implements tableObj {
   public context: contextObj;
 
   name: string;
@@ -156,7 +157,7 @@ export class CollectionTable extends EventEmitter implements tableObj {
     this.transact(() => {
       const dataSet = this.query(query);
 
-      dataSet.value.forEach((item, key) =>{
+      dataSet.value.forEach((item, key) => {
         if (item instanceof TableRecord) {
           action(item, this.context, this);
         } else {
@@ -257,38 +258,11 @@ export class CollectionTable extends EventEmitter implements tableObj {
       sourceTable: this.name,
       selector: querySelector,
       context: this.context,
-      reducer: query.joins? dataSetJoinReducer(query) : undefined
+      reducer: query.joins ? dataSetJoinReducer(query) : undefined
     });
   }
 
-  /*
-
-export type joinConnObj = {
-  tableName: string;
-  key?: string;
-  joinTableKey?: string;
-  frequency?: joinFreq;
-};
-
-   */
+  stream(query: queryDef, listener) {
+    return new QueryFetchStream(this.context, query).subscribe(listener);
+  }
 }
-
-/*
-
-
-export type joinDefObj = {
-  name?: string;
-  from: joinConnObj;
-  to: joinConnObj;
-};
-
-export type queryJoinDef = {
-  joinName?: string;
-  join: joinFn;
-  tableName?: string;
-  where?: string;
-  as?: string;
-  args? : any[];
-}
-
- */

@@ -141,6 +141,7 @@ export type contextObj = {
   query: (query: queryDef) => dataSetObj;
   queryItems: (query: queryDef) => any[];
   activeChanges: collectionObj<changeObj[],number,changeObj>;
+  stream: (query: queryDef, listener) => any;
 } & EventEmitter;
 
 export type tableObj = {
@@ -156,12 +157,8 @@ export type tableObj = {
   query: (query: queryDef) => dataSetObj;
   queryEach: (query: queryDef, action: queryEachFn) => void;
   setMany: (keys, field, value) => void;
+  stream: (query: queryDef, listener) => any;
 } & EventEmitter;
-
-export type dataContextObj = {
-  name: string,
-  context: contextObj,
-}
 
 export type tableRecordJoinObj = {
   updateJoinedRecord: (tableRecordObj) => void;

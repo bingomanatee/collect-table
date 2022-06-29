@@ -151,6 +151,7 @@ declare type tableObj = {
     query: (query: queryDef) => dataSetObj;
     queryEach: (query: queryDef, action: queryEachFn) => void;
     setMany: (keys: any, field: any, value: any) => void;
+    stream: (query: queryDef, listener: any) => any;
 } & EventEmitter;
 declare type dataContextObj = {
     name: string;

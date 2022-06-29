@@ -33,7 +33,7 @@
     "singleQuote": true,
     "trailingComma": "es5"
   },
-  "name": "collect-table",
+  "name": "@wonderlandlabs/carpenter",
   "author": "David Edelhart",
   "devDependencies": {
     "@open-wc/building-rollup": "^2.0.1",
