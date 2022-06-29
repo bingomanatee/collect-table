@@ -1,6 +1,6 @@
 import TableRecordJoin from "./TableRecordJoin";
 import { contextObj } from "../types";
-import DataSet from "../DataSet";
+import DataSet from "./DataSet";
 
 function joinMap(joinHelper: TableRecordJoin, context: contextObj) {
   if (joinHelper.joinDef.joins) {

@@ -24,7 +24,11 @@ function listen(qfs: QueryFetchStream) {
 
   context.on('change-complete', (change) => {
     if (context.activeChanges.size === 1 && context.lastChange?.time === change.time) {
-      subject.next(context.query(query));
+      const value = context.query(query);
+      console.log('--- sending value: ', value);
+      subject.next(value);
+    } else {
+      console.log('not sending change complete');
     }
   });
 

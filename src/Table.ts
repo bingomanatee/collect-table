@@ -13,7 +13,7 @@ import type {
   tableOptionsObj, tableRecordObj
 } from './types';
 import TableRecord from "./helpers/TableRecord";
-import DataSet from "./DataSet";
+import DataSet from "./helpers/DataSet";
 import whereFn from "./helpers/whereFn";
 import dataSetJoinReducer from "./helpers/dataSetJoinReducer";
 import { isCollection } from "./typeGuards";

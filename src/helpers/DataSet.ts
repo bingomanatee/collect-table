@@ -1,3 +1,4 @@
+import create from '@wonderlandlabs/collect';
 import isEqual from 'lodash.isequal';
 import {
   contextObj,
@@ -6,8 +7,10 @@ import {
   dataSetParams,
   mapCollection,
   dataSetReducerFn,
-  dataSetMapFn,
-} from "./types";
+  dataSetMapFn, stringMap, dataSetPostFn,
+} from "../types";
+import { isTableRecord } from "../typeGuards";
+import TableRecord from "./TableRecord";
 
 /**
  * dataSet is an excerpt OR extrapolation from a group of records in a tableName.
@@ -30,12 +33,16 @@ import {
  *    if there is a map function, it is selected,
  *    cloned and mapped by the function. Otherwise, equal to selected
  *
- * 5. value
+ * 6. postData
+ *    a map of tableSetRecordObj; if any notes exist after running postData, these records are annotated
+ *
+ * 6. value
  *    if there is a reducer, it is the data, reduced to a value that may or may not be a map
  *
  *
  */
 export class DataSet implements dataSetObj {
+
   constructor({
                 context,
                 sourceTable,
@@ -47,6 +54,7 @@ export class DataSet implements dataSetObj {
                 reducer,
                 meta,
                 value,
+                post,
               }: dataSetParams) {
     this.context = context;
     this.tableName = sourceTable;
@@ -57,8 +65,30 @@ export class DataSet implements dataSetObj {
     this.reducer = reducer;
     this.selector = selector;
     this.meta = meta;
-    if (value !== undefined) {
-      this._value = value;
+    this._value = value;
+    this.post = post;
+  }
+
+  private post?: dataSetPostFn;
+
+  private notes = new Map<any, stringMap>();
+
+  annotate(key, field, value) {
+    if (!this.notes.has(key)) {
+      this.notes.set(key, new Map<any, stringMap>());
+    }
+
+    this.notes.get(key)?.set(field, value);
+  }
+
+  mutateAnnotation(mutator, key?) {
+    if (key !== undefined) {
+      if (!this.notes.has(key)) {
+        this.notes.set(key, create(new Map<any, stringMap>()));
+      }
+      mutator(this, this.notes.get(key), key);
+    } else {
+      mutator(this, this.notes);
     }
   }
 
@@ -122,14 +152,29 @@ export class DataSet implements dataSetObj {
 
   get data(): mapCollection {
     if (!this.map) {
-      return this.selected.clone();
+      return this.selected;
     }
     return this.selected.clone().map((item, key) => {
       const record = this.table.recordForKey(key);
-      return this.map? this.map(record, this) : item;
-    } );
+      return this.map ? this.map(record, this) : item;
+    });
   }
 
+  postData() {
+    if (this.post) {
+      this.post(this);
+    }
+    return this.data.cloneShallow().map((item, key) => {
+      const notes = this.notes.get(key);
+      let record = item
+      if (!isTableRecord(item)) {
+        record = new TableRecord(this.context, this.tableName, key, item, { notes });
+      } else if (notes) {
+        record.addNotes(notes);
+      }
+      return record;
+    })
+  }
 
   private reducer?: dataSetReducerFn;
 

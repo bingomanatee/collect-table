@@ -36,8 +36,7 @@ declare type anyMap = Map<any, any>;
 declare type stringMap = Map<string, any>;
 declare type mapCollection = collectionObj<Map<any, any>, any, any>;
 declare type tableRecordMetaObj = {
-    helpers?: helperMap;
-    joins?: stringMap;
+    notes?: stringMap;
 };
 declare type joinDefObj = {
     name?: string;
@@ -45,6 +44,7 @@ declare type joinDefObj = {
     to: joinConnObj;
 };
 declare type dataSetSelectorFn = (keys: any[], source: mapCollection, ds: dataSetObj) => any[];
+declare type dataSetPostFn = (ds: dataSetObj) => any;
 declare type dataSetReducerFn = (data: mapCollection, ds: dataSetObj) => any;
 declare type dataSetMapFn = (data: tableRecordObj, ds: dataSetObj) => mapCollection;
 declare type dataSetParams = {
@@ -56,10 +56,10 @@ declare type dataSetParams = {
     data?: mapCollection;
     selector?: dataSetSelectorFn;
     map?: dataSetMapFn;
+    post?: dataSetPostFn;
     meta?: any;
     value?: any;
 };
-declare type joinResult = tableRecordObj | tableRecordObj[] | undefined;
 declare type tableOptionsObj = {
     keyProvider?: keyProviderFn;
     key?: any;
@@ -77,13 +77,16 @@ declare type addDataMetaObj = {
 declare type contextOptionsObj = {
     joins?: joinDefObj[];
 };
+declare type notesCollectionObj = collectionObj<Map<string, any>, any, string>;
 declare type innerBinaryFn = (recordTerm: any, recordAgainst: any, record: tableRecordObj, term: binaryTestObj) => boolean;
 declare type dataCreatorFn = (table: tableObj, data: any, key?: any) => any;
 declare type keyProviderFn = (target: any, table: tableObj, meta?: any) => any[];
-declare type joinFn = (record: tableRecordObj, args?: any) => any;
 declare type recordFn = (tableRecordObj: any) => any;
 declare type recordTestFn = (tableRecordObj: any) => boolean;
 declare type queryEachFn = (record: tableRecordValueObj, ctx: contextObj, table: tableObj) => any;
+declare type dataSetAnnotateFn = (key: any, field: string, value: any) => void;
+declare type dsMutatorFn = (ds: dataSetObj, annotation: any, key?: any) => void;
+declare type dataSetAnnotateMutatorFn = (ds: dataSetObj, mutator: dsMutatorFn, key?: any) => void;
 declare type whereTerm = recordTestFn | binaryTestObj | whereUnionObj;
 declare type RequireAtLeastOne<T, Keys extends keyof T = keyof T> = Pick<T, Exclude<keyof T, Keys>> & {
     [K in Keys]-?: Required<Pick<T, K>> & Partial<Pick<T, Exclude<Keys, K>>>;
@@ -124,6 +127,8 @@ declare type dataSetObj = {
     data: mapCollection;
     value: mapCollection;
     tableName: string;
+    annotate: dataSetAnnotateFn;
+    mutateAnnotation: dataSetAnnotateMutatorFn;
 };
 declare type contextObj = {
     transact: (fn: (changesObj: any) => any) => any;
@@ -137,6 +142,7 @@ declare type contextObj = {
     query: (query: queryDef) => dataSetObj;
     queryItems: (query: queryDef) => any[];
     activeChanges: collectionObj<changeObj[], number, changeObj>;
+    stream: (query: queryDef, listener: any) => any;
 } & EventEmitter;
 declare type tableObj = {
     name: string;
@@ -153,10 +159,6 @@ declare type tableObj = {
     setMany: (keys: any, field: any, value: any) => void;
     stream: (query: queryDef, listener: any) => any;
 } & EventEmitter;
-declare type dataContextObj = {
-    name: string;
-    context: contextObj;
-};
 declare type tableRecordJoinObj = {
     updateJoinedRecord: (tableRecordObj: any) => void;
     joinName: string;
@@ -173,13 +175,18 @@ declare type changeObj = {
     isActive: boolean;
     isLive: boolean;
 };
+declare type trvNotesObj = {
+    [key: string]: any;
+};
 declare type tableRecordValueObj = {
     tableName: any;
     key: any;
     data: any;
+    notes?: trvNotesObj;
 };
 declare type tableRecordObj = {
     data: any;
+    collection: collectionObj<any, any, any>;
     tableName: string;
     key: any;
     table: tableObj;
@@ -187,7 +194,9 @@ declare type tableRecordObj = {
     get: (field: any) => any;
     set: (field: any, value: any) => void;
     exists: boolean;
+    notes?: anyMap;
+    addNotes: (map: stringMap) => void;
     value: tableRecordValueObj;
 };
 
-export { addDataMetaObj, anyMap, binaryTestObj, changeObj, contextObj, contextOptionsObj, dataContextObj, dataCreatorFn, dataSetMapFn, dataSetObj, dataSetParams, dataSetReducerFn, dataSetSelectorFn, helperMap, innerBinaryFn, joinConnObj, joinDefObj, joinFn, joinResult, keyProviderFn, mapCollection, queryDef, queryEachFn, queryJoinDef, recordFn, recordTestFn, stringMap, tableDefObj, tableObj, tableOptionsObj, tableRecordJoinObj, tableRecordMetaObj, tableRecordObj, tableRecordValueObj, whereTerm, whereUnionObj };
+export { addDataMetaObj, anyMap, binaryTestObj, changeObj, contextObj, contextOptionsObj, dataCreatorFn, dataSetAnnotateFn, dataSetAnnotateMutatorFn, dataSetMapFn, dataSetObj, dataSetParams, dataSetPostFn, dataSetReducerFn, dataSetSelectorFn, dsMutatorFn, helperMap, innerBinaryFn, joinConnObj, joinDefObj, keyProviderFn, mapCollection, notesCollectionObj, queryDef, queryEachFn, queryJoinDef, recordFn, recordTestFn, stringMap, tableDefObj, tableObj, tableOptionsObj, tableRecordJoinObj, tableRecordMetaObj, tableRecordObj, tableRecordValueObj, trvNotesObj, whereTerm, whereUnionObj };

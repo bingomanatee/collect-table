@@ -1,6 +1,7 @@
 import { enums, create } from '@wonderlandlabs/collect';
 import {
-  contextObj,
+  anyMap,
+  contextObj, tableRecordMetaObj,
   tableRecordObj, tableRecordValueObj
 } from "../types";
 import { isCollection } from '../typeGuards';
@@ -13,13 +14,25 @@ const { FormEnum } = enums;
  * if not defined (the normal use case) it is read from the table with every call to `.data`.
  */
 export default class TableRecord implements tableRecordObj {
-  constructor(context: contextObj, tableName: string, key: any, data?: any) {
+  constructor(context: contextObj, tableName: string, key: any, data?: any, meta?: tableRecordMetaObj) {
     this.context = context;
     this.key = key;
     this.tableName = tableName;
     if (data !== undefined) {
       this._data = data;
     }
+    if (meta?.notes) {
+      this.notes = meta?.notes;
+    }
+  }
+
+  public notes?: anyMap;
+
+  public addNotes(map: anyMap) {
+    if (!this.notes) {
+      this.notes = new Map();
+    }
+    map.forEach((item, key) => this.notes?.set(key, item));
   }
 
   public key: any;
@@ -30,6 +43,14 @@ export default class TableRecord implements tableRecordObj {
 
   get table() {
     return this.context.table(this.tableName);
+  }
+
+  get collection() {
+    const {data} = this;
+    if (isCollection(data)) {
+      return data;
+    }
+    return create(data);
   }
 
   protected _data;

@@ -1,7 +1,7 @@
 import create from '@wonderlandlabs/collect';
 import TableRecordJoin from "./TableRecordJoin";
 import { dataSetObj, queryDef } from "../types";
-import DataSet from "../DataSet";
+import DataSet from "./DataSet";
 
 export function keysForJoin(joinHelper: TableRecordJoin, ds: dataSetObj, query: queryDef) {
   if (!(joinHelper.localConn && joinHelper.foreignConn)) {

@@ -1,7 +1,7 @@
 import create, { enums } from '@wonderlandlabs/collect';
 import { dataSetObj, dataSetReducerFn, mapCollection, queryDef } from "../types";
 import TableRecordJoin from "./TableRecordJoin";
-import DataSet from "../DataSet";
+import DataSet from "./DataSet";
 import { recordsForJoin } from "./recordsForJoin";
 import { keysForJoin } from "./keysForJoin";
 import TableRecord from "./TableRecord";
@@ -36,18 +36,21 @@ export default (query: queryDef) => {
       joinKeyTables.forEach((keys, helper: TableRecordJoin) => {
         const records = joinKeyRecords.get(helper); // foreign table keys, keyed by their IDs
         const itemKeys = keys.get(key); // foreign record keys for the current item
-        const sourceTable = helper.foreignConn?.tableName;
-        if (records && keys && sourceTable) {
-          const mappedDataSet = new DataSet({
-            sourceTable,
+        const joinedTableName = helper.foreignConn?.tableName;
+        if (records && keys && joinedTableName) {
+
+          // this is the subset of records from the foreign table to attach to the base record
+          const joinedDataSet = new DataSet({
+            sourceTable: joinedTableName,
             source: records,
             keys: itemKeys,
             context: ds.context,
           });
-          const {data: mappedData} = mappedDataSet;
+
+          const {data: mappedData} = joinedDataSet;
           if (mappedData) {
-            const joined = mappedData.cloneShallow().map((fItem, fKey) => new TableRecord(ds.context, sourceTable, fKey, fItem).value).items
-            target.set(helper.attachKey, joined);
+            const joinedRecords = mappedData.cloneShallow().map((fItem, fKey) => new TableRecord(ds.context, joinedTableName, fKey, fItem).value).items
+            target.set(helper.attachKey, joinedRecords);
           }
         }
       });

@@ -10,8 +10,7 @@ export type anyMap = Map<any, any>;
 export type stringMap = Map<string, any>;
 export type mapCollection = collectionObj<Map<any, any>, any, any>;
 export type tableRecordMetaObj = {
-  helpers?: helperMap;
-  joins?: stringMap;
+  notes?: stringMap;
 }
 // ------ joinedRecords
 
@@ -25,6 +24,7 @@ export type joinDefObj = {
 // ---- dataset
 
 export type dataSetSelectorFn = (keys: any[], source: mapCollection, ds: dataSetObj) => any[];
+export type dataSetPostFn = (ds: dataSetObj) => any;
 export type dataSetReducerFn = (data: mapCollection, ds: dataSetObj) => any;
 export type dataSetMapFn = (data: tableRecordObj, ds: dataSetObj) => mapCollection;
 export type dataSetParams = {
@@ -36,13 +36,13 @@ export type dataSetParams = {
   data?: mapCollection,
   selector?: dataSetSelectorFn,
   map?: dataSetMapFn,
+  post?: dataSetPostFn,
   meta?: any,
   value?: any
 }
 
 // ----- parameter defs
 
-export type joinResult = tableRecordObj | tableRecordObj[] | undefined;
 export type tableOptionsObj = {
   keyProvider?: keyProviderFn;
   key?: any;
@@ -59,15 +59,20 @@ export type contextOptionsObj = {
   joins?: joinDefObj[];
 };
 
+export type notesCollectionObj = collectionObj<Map<string, any>, any, string>;
+
 // -------------- functions
 
 export type innerBinaryFn = (recordTerm: any, recordAgainst: any, record: tableRecordObj, term: binaryTestObj) => boolean;
 export type dataCreatorFn = (table: tableObj, data: any, key?: any) => any;
 export type keyProviderFn = ( target: any, table: tableObj,meta?: any) => any[];
-export type joinFn = (record: tableRecordObj,  args?: any) => any;
+
 export type recordFn = (tableRecordObj) => any;
 export type recordTestFn = (tableRecordObj) => boolean;
 export type queryEachFn = (record: tableRecordValueObj, ctx: contextObj, table: tableObj) => any;
+export type dataSetAnnotateFn = (key: any, field: string, value: any) => void;
+export type dsMutatorFn = (ds: dataSetObj, annotation: any, key?: any) => void;
+export type dataSetAnnotateMutatorFn = (ds: dataSetObj, mutator: dsMutatorFn, key?: any) => void;
 
 // --- query : where
 
@@ -126,6 +131,8 @@ export type dataSetObj = {
   data: mapCollection;
   value: mapCollection;
   tableName: string;
+  annotate: dataSetAnnotateFn;
+  mutateAnnotation: dataSetAnnotateMutatorFn;
 }
 
 export type contextObj = {
@@ -178,13 +185,17 @@ export type changeObj = {
   isLive: boolean;
 };
 
+export type trvNotesObj = {[key: string] : any};
+
 export type tableRecordValueObj = {
   tableName: any,
   key: any,
   data: any,
+  notes?: trvNotesObj;
 }
 export type tableRecordObj = {
   data: any;
+  collection: collectionObj<any,any,any>;
   tableName: string;
   key: any;
   table: tableObj;
@@ -192,5 +203,7 @@ export type tableRecordObj = {
   get: (field: any) => any;
   set: (field: any, value: any) => void;
   exists: boolean;
+  notes?: anyMap;
+  addNotes: (map: stringMap) => void;
   value: tableRecordValueObj;
 }

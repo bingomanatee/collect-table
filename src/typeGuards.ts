@@ -1,5 +1,5 @@
 import type{ collectionObj } from "@wonderlandlabs/collect";
-import DataSet from "./DataSet";
+import DataSet from "./helpers/DataSet";
 import { tableRecordObj } from "./types";
 
 export function isCollection(target): target is collectionObj<any, any, any> {
