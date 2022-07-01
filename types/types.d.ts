@@ -36,8 +36,8 @@ declare type anyMap = Map<any, any>;
 declare type stringMap = Map<string, any>;
 declare type mapCollection = collectionObj<anyMap, any, any>;
 declare type tableRecordNotesColl = collectionObj<stringMap, string, any>;
-declare type recordSetMap = Map<any, tableRecordObj>;
-declare type recordSetCollection = collectionObj<recordSetMap, any, tableRecordObj>;
+declare type recordSetMap = Map<any, recordObj>;
+declare type recordSetCollection = collectionObj<recordSetMap, any, recordObj>;
 declare type tableRecordMetaObj = {
     helpers?: helperMap;
     joins?: stringMap;
@@ -67,7 +67,7 @@ declare type contextOptionsObj = {
 declare type stringObj = {
     [key: string]: any;
 };
-declare type innerBinaryFn = (recordTerm: any, recordAgainst: any, record: tableRecordObj, term: binaryTestObj) => boolean;
+declare type innerBinaryFn = (recordTerm: any, recordAgainst: any, record: recordObj, term: binaryTestObj) => boolean;
 declare type dataCreatorFn = (table: tableObj, data: any, key?: any) => any;
 declare type keyProviderFn = (target: any, table: tableObj, meta?: any) => any[];
 declare type recordFn = (tableRecordObj: any) => any;
@@ -114,7 +114,7 @@ declare type contextObj = {
     lastChange: changeObj | undefined;
     restoreTable(name: string, table: mapCollection): any;
     joins: collectionObj<Map<string, joinDefObj>, string, joinDefObj>;
-    query: (query: queryDef) => tableRecordObj[];
+    query: (query: queryDef) => recordObj[];
     queryItems: (query: queryDef) => any[];
     activeChanges: collectionObj<changeObj[], number, changeObj>;
     stream: (query: queryDef, listener: any) => any;
@@ -126,10 +126,10 @@ declare type tableObj = {
     hasKey: (key: any) => boolean;
     addData: (data: any, meta?: any) => any;
     getData: (key: any) => any | undefined;
-    recordForKey: (key: any, meta?: tableRecordMetaObj) => tableRecordObj;
+    recordForKey: (key: any, meta?: tableRecordMetaObj) => recordObj;
     context: contextObj;
     restore: (store: anyMap) => tableObj;
-    query: (query: queryDef) => tableRecordObj[];
+    query: (query: queryDef) => recordObj[];
     queryEach: (query: queryDef, action: queryEachFn) => void;
     setMany: (keys: any, field: any, value: any) => void;
     stream: (query: queryDef, listener: any) => any;
@@ -155,17 +155,17 @@ declare type tableRecordValueObj = {
     key: any;
     data: any;
     joins?: {
-        [joinName: string]: tableRecordObj[];
+        [joinName: string]: recordObj[];
     };
 };
-declare type tableRecordObj = {
+declare type recordObj = {
     data: any;
     tableName: string;
     key: any;
     table: tableObj;
     context: contextObj;
     get: (field: any) => any;
-    set: (field: any, value: any) => void;
+    setField: (field: any, value: any) => void;
     exists: boolean;
     value: tableRecordValueObj;
     notes?: tableRecordNotesColl;
@@ -174,4 +174,4 @@ declare type tableRecordObj = {
     readonly form: string;
 };
 
-export { addDataMetaObj, anyMap, binaryTestObj, changeObj, contextObj, contextOptionsObj, dataCreatorFn, helperMap, innerBinaryFn, joinConnObj, joinDefObj, keyProviderFn, mapCollection, queryDef, queryEachFn, queryJoinDef, recordFn, recordSetCollection, recordSetMap, recordTestFn, stringMap, stringObj, tableDefObj, tableObj, tableOptionsObj, tableRecordJoinObj, tableRecordMetaObj, tableRecordNotesColl, tableRecordObj, tableRecordValueObj, whereTerm, whereUnionObj };
+export { addDataMetaObj, anyMap, binaryTestObj, changeObj, contextObj, contextOptionsObj, dataCreatorFn, helperMap, innerBinaryFn, joinConnObj, joinDefObj, keyProviderFn, mapCollection, queryDef, queryEachFn, queryJoinDef, recordFn, recordObj, recordSetCollection, recordSetMap, recordTestFn, stringMap, stringObj, tableDefObj, tableObj, tableOptionsObj, tableRecordJoinObj, tableRecordMetaObj, tableRecordNotesColl, tableRecordValueObj, whereTerm, whereUnionObj };

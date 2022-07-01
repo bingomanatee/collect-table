@@ -54,13 +54,13 @@ tap.test('DataSet', (suite) => {
     })
 
     fs.same(hits, qfs_result_stream.slice(0, 2));
-/*    console.log('========= hits after :', JSON.stringify(hits)
+/*   console.log('========= hits after :', JSON.stringify(hits)
       .replace(/\{/g, "\n{")
       .replace(/\[/g, "\n[")
     );*/
 
     fs.end();
-  }, {skip: true});
+  });
 
   suite.end();
 })

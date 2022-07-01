@@ -10,8 +10,8 @@ export type anyMap = Map<any, any>;
 export type stringMap = Map<string, any>;
 export type mapCollection = collectionObj<anyMap, any, any>;
 export type tableRecordNotesColl = collectionObj<stringMap, string, any>;
-export type recordSetMap = Map<any, tableRecordObj>;
-export type recordSetCollection = collectionObj<recordSetMap, any, tableRecordObj>;
+export type recordSetMap = Map<any, recordObj>;
+export type recordSetCollection = collectionObj<recordSetMap, any, recordObj>;
 export type tableRecordMetaObj = {
   helpers?: helperMap;
   joins?: stringMap;
@@ -46,7 +46,7 @@ export type stringObj = { [key: string]: any };
 
 // -------------- functions
 
-export type innerBinaryFn = (recordTerm: any, recordAgainst: any, record: tableRecordObj, term: binaryTestObj) => boolean;
+export type innerBinaryFn = (recordTerm: any, recordAgainst: any, record: recordObj, term: binaryTestObj) => boolean;
 export type dataCreatorFn = (table: tableObj, data: any, key?: any) => any;
 export type keyProviderFn = (target: any, table: tableObj, meta?: any) => any[];
 
@@ -113,7 +113,7 @@ export type contextObj = {
   lastChange: changeObj | undefined;
   restoreTable(name: string, table: mapCollection);
   joins: collectionObj<Map<string, joinDefObj>, string, joinDefObj>;
-  query: (query: queryDef) => tableRecordObj[];
+  query: (query: queryDef) => recordObj[];
   queryItems: (query: queryDef) => any[];
   activeChanges: collectionObj<changeObj[], number, changeObj>;
   stream: (query: queryDef, listener) => any;
@@ -126,10 +126,10 @@ export type tableObj = {
   hasKey: (key: any) => boolean;
   addData: (data: any, meta?: any) => any; // returns key
   getData: (key: any) => any | undefined;
-  recordForKey: (key: any, meta?: tableRecordMetaObj) => tableRecordObj;
+  recordForKey: (key: any, meta?: tableRecordMetaObj) => recordObj;
   context: contextObj;
   restore: (store: anyMap) => tableObj;
-  query: (query: queryDef) => tableRecordObj[];
+  query: (query: queryDef) => recordObj[];
   queryEach: (query: queryDef, action: queryEachFn) => void;
   setMany: (keys, field, value) => void;
   stream: (query: queryDef, listener) => any;
@@ -157,16 +157,16 @@ export type tableRecordValueObj = {
   tableName: any,
   key: any,
   data: any,
-  joins?: {[joinName: string]: tableRecordObj[]};
+  joins?: {[joinName: string]: recordObj[]};
 }
-export type tableRecordObj = {
+export type recordObj = {
   data: any;
   tableName: string;
   key: any;
   table: tableObj;
   context: contextObj;
   get: (field: any) => any;
-  set: (field: any, value: any) => void;
+  setField: (field: any, value: any) => void;
   exists: boolean;
   value: tableRecordValueObj;
   notes?: tableRecordNotesColl;

@@ -1,7 +1,7 @@
 import { enums, create } from '@wonderlandlabs/collect';
 import {
   contextObj, mapCollection,
-  tableRecordObj, tableRecordValueObj
+  recordObj, tableRecordValueObj
 } from "./types";
 import { isCollection } from './typeGuards';
 
@@ -12,7 +12,7 @@ const { FormEnum } = enums;
  * In some contexts, data is deterministic from the constructor;
  * if not defined (the normal use case) it is read from the table with every call to `.data`.
  */
-export default class TableRecord implements tableRecordObj {
+export default class Record implements recordObj {
   constructor(context: contextObj, tableName: string, key: any, data?: any) {
     this.context = context;
     this.key = key;
@@ -79,7 +79,7 @@ export default class TableRecord implements tableRecordObj {
     return !isCollection(data) ? create(data) : data;
   }
 
-  set(field, value) {
+  setField(field, value) {
     const { coll } = this;
     if (coll.form === FormEnum.scalar) {
       return;

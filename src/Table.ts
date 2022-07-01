@@ -10,9 +10,9 @@ import type {
   queryDef,
   dataCreatorFn,
   tableObj,
-  tableOptionsObj, tableRecordObj
+  tableOptionsObj, recordObj
 } from './types';
-import TableRecord from "./TableRecord";
+import Record from "./Record";
 import { isCollection } from "./typeGuards";
 import QueryFetchStream from "./QueryFetchStream";
 import QueryResultSet from "./QueryResultSet";
@@ -112,7 +112,7 @@ export class Table extends EventEmitter implements tableObj {
   }
 
   public recordForKey(key) {
-    return new TableRecord(this.context, this.name, key);
+    return new Record(this.context, this.name, key);
   }
 
   /**
@@ -121,7 +121,7 @@ export class Table extends EventEmitter implements tableObj {
    * @param meta {addDataMetaObj} any other values that the key/data factories need
    *
    */
-  public addData(data: any, meta?: addDataMetaObj): tableRecordObj {
+  public addData(data: any, meta?: addDataMetaObj): recordObj {
     const preparedData = this.newData(data, meta);
 
     // if meta doesn't contain key, generate an auto-key from the keyProvider.
@@ -159,7 +159,7 @@ export class Table extends EventEmitter implements tableObj {
   }
 
   set(key, field, value) {
-    this.recordForKey(key).set(field, value);
+    this.recordForKey(key).setField(field, value);
   }
 
   setMany(keys, field, value) {
@@ -167,7 +167,7 @@ export class Table extends EventEmitter implements tableObj {
       let coll = keys;
       if (typeof keys === "function") {
         this.data.cloneShallow.filter(keys).forEach((_i, iKey) => {
-          this.recordForKey(iKey).set(field, value);
+          this.recordForKey(iKey).setField(field, value);
         });
 
       } else {
@@ -175,7 +175,7 @@ export class Table extends EventEmitter implements tableObj {
           coll = create(keys);
         }
         coll.forEach((key) => {
-          this.recordForKey(key).set(field, value);
+          this.recordForKey(key).setField(field, value);
         });
       }
     })
@@ -230,7 +230,7 @@ export class Table extends EventEmitter implements tableObj {
 
   // -------------------------- query
 
-  query(query: queryDef): tableRecordObj[] {
+  query(query: queryDef): recordObj[] {
     if (query.tableName !== this.name) {
       throw e('badly targeted query; ', { query, table: this });
     }

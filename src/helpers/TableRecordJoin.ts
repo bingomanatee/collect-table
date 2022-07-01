@@ -1,14 +1,22 @@
-import {
-  contextObj,
-  joinConnObj,
-  joinDefObj,
-  queryDef,
-  queryJoinDef,
-} from "../types";
-import {joinFreq} from "../constants";
+import { contextObj, joinConnObj, joinDefObj, queryDef, queryJoinDef, } from "../types";
+import { joinFreq } from "../constants";
+
+function isPlural(conn?: joinConnObj) {
+  switch (conn?.frequency) {
+    case joinFreq.noneOrMore:
+      return true;
+      break;
+
+    case joinFreq.oneOrMore:
+      return true;
+      break;
+    default:
+      return false;
+  }
+}
 
 /**
- * parses the individual join of a query
+ * parses the individual join of a query; a helper class
  */
  export class TableRecordJoin {
   private query: queryDef;
@@ -50,6 +58,15 @@ import {joinFreq} from "../constants";
       console.warn('fromContext: cannot find tableName', this.tableName, 'in joinDef', def);
     }
   }
+
+  get foreignPlural () {
+    return isPlural(this.foreignConn);
+  };
+
+  get localIsPlural() {
+    return isPlural(this.localConn);
+  }
+
 
   get onlyOneResult () {
     if (this.foreignConn === undefined) return false;

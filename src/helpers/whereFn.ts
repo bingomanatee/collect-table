@@ -5,7 +5,7 @@ import {
   innerBinaryFn,
   queryDef,
   recordTestFn,
-  tableRecordObj,
+  recordObj,
   whereTerm,
   whereUnionObj
 } from "../types";
@@ -13,7 +13,7 @@ import { binaryOperator, booleanOperator } from "../constants";
 
 const {FormEnum} = enums;
 
-const noopFn = (_record: tableRecordObj) => true;
+const noopFn = (_record: recordObj) => true;
 
 export default function whereFn(query: queryDef) : recordTestFn {
   if (!query.where) {
@@ -58,7 +58,7 @@ const whereUnionFn = (term: whereUnionObj) : recordTestFn => {
     return noopFn;
   }
 
-  return (record: tableRecordObj) : boolean => {
+  return (record: recordObj) : boolean => {
     switch (bool) {
       case booleanOperator.and:
         return termTests.map((test) => test(record)).every();

@@ -24,19 +24,19 @@ To run tests, use `npm test` or `yarn test`.
 
 ## Configuration
 
-Code quality is set up for you with `prettier`, `husky`, and `lint-staged`. Adjust the respective fields in `package.json` accordingly.
+Code quality is setField up for you with `prettier`, `husky`, and `lint-staged`. Adjust the respective fields in `package.json` accordingly.
 
 ### Jest
 
-Jest tests are set up to run with `npm test` or `yarn test`.
+Jest tests are setField up to run with `npm test` or `yarn test`.
 
 ### Bundle Analysis
 
-[`size-limit`](https://github.com/ai/size-limit) is set up to calculate the real cost of your library with `npm run size` and visualize the bundle with `npm run analyze`.
+[`size-limit`](https://github.com/ai/size-limit) is setField up to calculate the real cost of your library with `npm run size` and visualize the bundle with `npm run analyze`.
 
 #### Setup Files
 
-This is the folder structure we set up for you:
+This is the folder structure we setField up for you:
 
 ```txt
 /src
@@ -55,7 +55,7 @@ TSDX uses [Rollup](https://rollupjs.org) as a bundler and generates multiple rol
 
 ### TypeScript
 
-`tsconfig.json` is set up to interpret `dom` and `esnext` types, as well as `react` for `jsx`. Adjust according to your needs.
+`tsconfig.json` is setField up to interpret `dom` and `esnext` types, as well as `react` for `jsx`. Adjust according to your needs.
 
 ## Continuous Integration
 

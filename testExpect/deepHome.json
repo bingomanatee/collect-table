@@ -8,31 +8,27 @@
       "addID": 1
     },
     "joins": {
-      "home": [
-        {
-          "tableName": "addr",
-          "key": 1,
-          "data": {
-            "id": 1,
-            "addr": "111 First Street",
-            "state": "CA",
-            "country": "US",
-            "postcode": 12345
-          },
-          "joins": {
-            "stateInfo": [
-              {
-                "tableName": "states",
-                "key": "CA",
-                "data": {
-                  "name": "California",
-                  "code": "CA"
-                }
-              }
-            ]
+      "home": {
+        "tableName": "addr",
+        "key": 1,
+        "data": {
+          "id": 1,
+          "addr": "111 First Street",
+          "state": "CA",
+          "country": "US",
+          "postcode": 12345
+        },
+        "joins": {
+          "stateInfo": {
+            "tableName": "states",
+            "key": "CA",
+            "data": {
+              "name": "California",
+              "code": "CA"
+            }
           }
         }
-      ]
+      }
     }
   },
   {
@@ -44,31 +40,27 @@
       "addID": 3
     },
     "joins": {
-      "home": [
-        {
-          "tableName": "addr",
-          "key": 3,
-          "data": {
-            "id": 3,
-            "addr": "333 Trinity Ave",
-            "state": "OR",
-            "country": "US",
-            "postcode": 72332
-          },
-          "joins": {
-            "stateInfo": [
-              {
-                "tableName": "states",
-                "key": "OR",
-                "data": {
-                  "name": "Oregon",
-                  "code": "OR"
-                }
-              }
-            ]
+      "home": {
+        "tableName": "addr",
+        "key": 3,
+        "data": {
+          "id": 3,
+          "addr": "333 Trinity Ave",
+          "state": "OR",
+          "country": "US",
+          "postcode": 72332
+        },
+        "joins": {
+          "stateInfo": {
+            "tableName": "states",
+            "key": "OR",
+            "data": {
+              "name": "Oregon",
+              "code": "OR"
+            }
           }
         }
-      ]
+      }
     }
   },
   {
@@ -79,7 +71,7 @@
       "email": "nosferatu@transylvania.com"
     },
     "joins": {
-      "home": []
+      "home": null
     }
   },
   {
@@ -91,31 +83,27 @@
       "addID": 2
     },
     "joins": {
-      "home": [
-        {
-          "tableName": "addr",
-          "key": 2,
-          "data": {
-            "id": 2,
-            "addr": "20 Broadway Ave",
-            "country": "US",
-            "state": "CA",
-            "postcode": 40443
-          },
-          "joins": {
-            "stateInfo": [
-              {
-                "tableName": "states",
-                "key": "CA",
-                "data": {
-                  "name": "California",
-                  "code": "CA"
-                }
-              }
-            ]
+      "home": {
+        "tableName": "addr",
+        "key": 2,
+        "data": {
+          "id": 2,
+          "addr": "20 Broadway Ave",
+          "country": "US",
+          "state": "CA",
+          "postcode": 40443
+        },
+        "joins": {
+          "stateInfo": {
+            "tableName": "states",
+            "key": "CA",
+            "data": {
+              "name": "California",
+              "code": "CA"
+            }
           }
         }
-      ]
+      }
     }
   },
   {
@@ -127,20 +115,18 @@
       "addID": 4
     },
     "joins": {
-      "home": [
-        {
-          "tableName": "addr",
-          "key": 4,
-          "data": {
-            "id": 4,
-            "addr": "100 noState Lane",
-            "postcode": 123213
-          },
-          "joins": {
-            "stateInfo": []
-          }
+      "home": {
+        "tableName": "addr",
+        "key": 4,
+        "data": {
+          "id": 4,
+          "addr": "100 noState Lane",
+          "postcode": 123213
+        },
+        "joins": {
+          "stateInfo": null
         }
-      ]
+      }
     }
   }
 ]

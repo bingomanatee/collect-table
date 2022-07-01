@@ -7,6 +7,8 @@ const { default: createContext, constants } = pkg;
 import deepHome from './../testExpect/deepHome.json' assert { type: 'json' };
 import simpleHome from './../testExpect/simpleHome.json' assert { type: 'json' };
 import singleRecordGet from './../testExpect/singleRecord.json' assert { type: 'json' };
+import stateRS from './../testExpect/states.json' assert { type: 'json' };
+import deepStateRS from './../testExpect/deepStates.json' assert { type: 'json' };
 
 const { joinFreq, binaryOperator } = constants;
 
@@ -59,11 +61,11 @@ tap.test('queries', (suite) => {
         }
       ]
     });
-    /*
+/*
         console.log('==================== simple home query:', JSON.stringify(records)
           .replace(/\{/g, "\n{")
         );
-    */
+*/
 
     jTest.same(records, simpleHome);
     jTest.end();
@@ -84,14 +86,52 @@ tap.test('queries', (suite) => {
       ]
     });
 
-/*
-    console.log('==================== DEEP home query:', JSON.stringify(records)
+
+/*    console.log('==================== DEEP home query:', JSON.stringify(records)
       .replace(/\{/g, "\n{")
-    );
-*/
+    );*/
+
 
     jTest.same(records, deepHome);
     jTest.end();
   });
+
+  suite.test('toMany', (tm) => {
+
+    const ctx = makeContext(createContext, joinFreq);
+    const records = ctx.query({
+      tableName: 'states',
+      joins: [
+        { joinName: 'stateInfo' }
+      ]
+    });
+    // console.log('==================== state query:', JSON.stringify(records)
+    //   .replace(/\{/g, "\n{")
+    // );
+
+    tm.same(records, stateRS);
+
+
+    tm.end();
+  });
+
+  suite.test('toMany - deep', (tmDeep) => {
+
+    const ctx = makeContext(createContext, joinFreq);
+    const records = ctx.query({
+      tableName: 'states',
+      joins: [
+        { joinName: 'stateInfo' , joins: [{joinName: 'home'}]}
+      ]
+    });
+ /*   console.log('==================== state query DEEP:', JSON.stringify(records)
+      .replace(/\{/g, "\n{")
+    );*/
+
+    tmDeep.same(records, deepStateRS);
+
+    tmDeep.end();
+  });
+
   suite.end();
 });

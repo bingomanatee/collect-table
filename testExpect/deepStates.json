@@ -1,0 +1,117 @@
+[
+  {
+    "tableName": "states",
+    "key": "CA",
+    "data": {
+      "name": "California",
+      "code": "CA"
+    },
+    "joins": {
+      "stateInfo": [
+        {
+          "tableName": "addr",
+          "key": 1,
+          "data": {
+            "id": 1,
+            "addr": "111 First Street",
+            "state": "CA",
+            "country": "US",
+            "postcode": 12345
+          },
+          "joins": {
+            "home": {
+              "tableName": "users",
+              "key": 1,
+              "data": {
+                "name": "Bill Smith",
+                "email": "bill@google.com",
+                "addID": 1
+              }
+            }
+          }
+        },
+        {
+          "tableName": "addr",
+          "key": 2,
+          "data": {
+            "id": 2,
+            "addr": "20 Broadway Ave",
+            "country": "US",
+            "state": "CA",
+            "postcode": 40443
+          },
+          "joins": {
+            "home": {
+              "tableName": "users",
+              "key": 4,
+              "data": {
+                "name": "Ellen Fisk",
+                "email": "ellen@yahoo.com",
+                "addID": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "tableName": "states",
+    "key": "OR",
+    "data": {
+      "name": "Oregon",
+      "code": "OR"
+    },
+    "joins": {
+      "stateInfo": [
+        {
+          "tableName": "addr",
+          "key": 3,
+          "data": {
+            "id": 3,
+            "addr": "333 Trinity Ave",
+            "state": "OR",
+            "country": "US",
+            "postcode": 72332
+          },
+          "joins": {
+            "home": {
+              "tableName": "users",
+              "key": 2,
+              "data": {
+                "name": "Sal Jones",
+                "email": "sal@yahoo.com",
+                "addID": 3
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "tableName": "states",
+    "key": "KY",
+    "data": {
+      "name": "Kentucky",
+      "code": "KY"
+    },
+    "joins": {
+      "stateInfo": [
+        {
+          "tableName": "addr",
+          "key": 5,
+          "data": {
+            "id": 5,
+            "addr": "50 nobodyLivesHere Lane",
+            "postcode": 112345,
+            "state": "KY"
+          },
+          "joins": {
+            "home": null
+          }
+        }
+      ]
+    }
+  }
+]

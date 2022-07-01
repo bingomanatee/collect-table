@@ -8,19 +8,17 @@
       "addID": 1
     },
     "joins": {
-      "home": [
-        {
-          "tableName": "addr",
-          "key": 1,
-          "data": {
-            "id": 1,
-            "addr": "111 First Street",
-            "state": "CA",
-            "country": "US",
-            "postcode": 12345
-          }
+      "home": {
+        "tableName": "addr",
+        "key": 1,
+        "data": {
+          "id": 1,
+          "addr": "111 First Street",
+          "state": "CA",
+          "country": "US",
+          "postcode": 12345
         }
-      ]
+      }
     }
   },
   {
@@ -32,19 +30,17 @@
       "addID": 3
     },
     "joins": {
-      "home": [
-        {
-          "tableName": "addr",
-          "key": 3,
-          "data": {
-            "id": 3,
-            "addr": "333 Trinity Ave",
-            "state": "OR",
-            "country": "US",
-            "postcode": 72332
-          }
+      "home": {
+        "tableName": "addr",
+        "key": 3,
+        "data": {
+          "id": 3,
+          "addr": "333 Trinity Ave",
+          "state": "OR",
+          "country": "US",
+          "postcode": 72332
         }
-      ]
+      }
     }
   },
   {
@@ -55,7 +51,7 @@
       "email": "nosferatu@transylvania.com"
     },
     "joins": {
-      "home": []
+      "home": null
     }
   },
   {
@@ -67,19 +63,17 @@
       "addID": 2
     },
     "joins": {
-      "home": [
-        {
-          "tableName": "addr",
-          "key": 2,
-          "data": {
-            "id": 2,
-            "addr": "20 Broadway Ave",
-            "country": "US",
-            "state": "CA",
-            "postcode": 40443
-          }
+      "home": {
+        "tableName": "addr",
+        "key": 2,
+        "data": {
+          "id": 2,
+          "addr": "20 Broadway Ave",
+          "country": "US",
+          "state": "CA",
+          "postcode": 40443
         }
-      ]
+      }
     }
   },
   {
@@ -91,17 +85,15 @@
       "addID": 4
     },
     "joins": {
-      "home": [
-        {
-          "tableName": "addr",
-          "key": 4,
-          "data": {
-            "id": 4,
-            "addr": "100 noState Lane",
-            "postcode": 123213
-          }
+      "home": {
+        "tableName": "addr",
+        "key": 4,
+        "data": {
+          "id": 4,
+          "addr": "100 noState Lane",
+          "postcode": 123213
         }
-      ]
+      }
     }
   }
 ]

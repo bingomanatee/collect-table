@@ -1,5 +1,5 @@
 // import create from '@wonderlandlabs/collect';
-import { contextObj, queryDef, tableRecordObj } from "./types";
+import { contextObj, queryDef, recordObj } from "./types";
 import TableRecordJoin from "./helpers/TableRecordJoin";
 import whereFn from "./helpers/whereFn";
 
@@ -40,7 +40,7 @@ export class QueryResultSet {
       collection = collection.filter(wf)
     }
 
-    collection.forEach((record: tableRecordObj, key) => {
+    collection.forEach((record: recordObj, key) => {
       this.query.joins?.forEach((joinDef) => {
         const localCache = new Map();
         const helper = new TableRecordJoin(this.context, joinDef, this.query);
@@ -75,9 +75,13 @@ export class QueryResultSet {
             if(localKeyName) {
               localCache.set(localKey, match);
             }
-            record.addJoin(helper.attachKey, match);
+            // console.log('from ', record.tableName, ' join ', helper.localConn, 'to', helper.foreignConn, 'plural is ', helper.foreignPlural,);
+              if (helper.foreignPlural) {
+                record.addJoin(helper.attachKey, match);
+              } else {
+                record.addJoin(helper.attachKey, (match && (match.length > 0)) ? match[0] : null);
+              }
           }
-
         }
       });
     });
