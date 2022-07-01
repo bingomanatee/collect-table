@@ -1,5 +1,5 @@
 // import create from '@wonderlandlabs/collect';
-import { contextObj, queryDef, recordObj } from "./types";
+import { contextObj, queryDef, recordObj, recordSetCollection } from "./types";
 import TableRecordJoin from "./helpers/TableRecordJoin";
 import whereFn from "./helpers/whereFn";
 
@@ -24,23 +24,23 @@ export class QueryResultSet {
   // the base, un-joined records, with no joins
   get records() {
     const { table } = this;
-    let collection = table.data;
+    let records: recordSetCollection;
     if (this.query.key) {
+      records = table.data.cloneEmpty();
       const record = table.recordForKey(this.query.key);
-      collection = collection.cloneEmpty();
       if (record) {
-        collection.set(record.key, record);
+        records.set(record.key, record);
       }
     } else {
-      collection = collection.cloneShallow().map((_item, key) => table.recordForKey(key));
+      records = table.data.cloneShallow().map((_item, key) => table.recordForKey(key));
     }
 
     if (this.query.where) {
       const wf = whereFn(this.query);
-      collection = collection.filter(wf)
+      records.filter(wf);
     }
 
-    collection.forEach((record: recordObj, key) => {
+    records.forEach((record: recordObj, key) => {
       this.query.joins?.forEach((joinDef) => {
         const localCache = new Map();
         const helper = new TableRecordJoin(this.context, joinDef, this.query);
@@ -86,7 +86,7 @@ export class QueryResultSet {
       });
     });
 
-    return collection.cloneShallow().map((r) => r.value).items
+    return records.cloneShallow().map((r) => r.value).items
   }
 
 

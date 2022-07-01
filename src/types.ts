@@ -133,6 +133,9 @@ export type tableObj = {
   queryEach: (query: queryDef, action: queryEachFn) => void;
   setMany: (keys, field, value) => void;
   stream: (query: queryDef, listener) => any;
+  removeKey: (key: any) => void;
+  removeItem: (item: any) => void;
+  removeQuery: (query: stringObj) => void;
 } & EventEmitter;
 
 export type tableRecordJoinObj = {
@@ -157,7 +160,7 @@ export type tableRecordValueObj = {
   tableName: any,
   key: any,
   data: any,
-  joins?: {[joinName: string]: recordObj[]};
+  joins?: { [joinName: string]: recordObj[] };
 }
 export type recordObj = {
   data: any;

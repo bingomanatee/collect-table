@@ -91,7 +91,7 @@ export default class Record implements recordObj {
   }
 
   get exists() {
-    return (this._data !== undefined) || this.table.hasKey(this.key);
+    return this.table.hasKey(this.key);
   }
 
   /**
@@ -147,5 +147,9 @@ export default class Record implements recordObj {
       this.notes.set('joins', create(new Map()));
     }
     this.notes.get('joins').set(key, items);
+  }
+
+  delete() {
+    this.table.removeKey(this.key);
   }
 }

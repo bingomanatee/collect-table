@@ -2,6 +2,7 @@ import create, { utils } from '@wonderlandlabs/collect';
 
 import EventEmitter from "emitix";
 
+import { collectionObj } from "@wonderlandlabs/collect/types/types";
 import type {
   addDataMetaObj, anyMap,
   contextObj,
@@ -93,6 +94,10 @@ export class Table extends EventEmitter implements tableObj {
     this._data = value;
   }
 
+  get size() {
+    return this.data.size;
+  }
+
   public addMany(data: Array<any | any[]>) {
     const result = new Map();
     return this.transact(
@@ -181,15 +186,44 @@ export class Table extends EventEmitter implements tableObj {
     })
   }
 
-  remove(key) {
-    if (typeof key === 'function') {
-      this.data.filter((_i, iKey) => !key(this.recordForKey(iKey)))
+  removeKey(key) {
+    this.transact(() => {
+      this.data.deleteKey(key);
+    })
+  }
+
+  removeQuery(query) {
+    this.transact(() => {
+
+      const remQuery = {
+        tableName: this.name,
+        ...query
+      }
+      const toRemove = this.query(remQuery);
+      const keys = toRemove.map((record) => record.key);
+      const newData = this.data.cloneShallow().filter((_item, key) => !keys.includes(key));
+      if (newData.size === this.size) {
+        return;
+      }
+      this.updateData(newData, true);
+    });
+  }
+
+  updateData(newData: collectionObj<any, any, any>, noTrans) {
+    if (noTrans) {
+      this._data = newData;
     }
-    this.data.deleteKey(key);
+    else {
+      this.transact(()=> {
+        this.updateData(newData, true);
+      })
+    }
   }
 
   removeItem(item) {
-    this.data.deleteItem(item);
+    this.transact(() => {
+      this.data.deleteItem(item);
+    });
   }
 
   public keyProvider: keyProviderFn = () => KeyProviders.Default(this);

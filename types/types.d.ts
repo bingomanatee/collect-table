@@ -133,6 +133,9 @@ declare type tableObj = {
     queryEach: (query: queryDef, action: queryEachFn) => void;
     setMany: (keys: any, field: any, value: any) => void;
     stream: (query: queryDef, listener: any) => any;
+    removeKey: (key: any) => void;
+    removeItem: (item: any) => void;
+    removeQuery: (query: stringObj) => void;
 } & EventEmitter;
 declare type tableRecordJoinObj = {
     updateJoinedRecord: (tableRecordObj: any) => void;
