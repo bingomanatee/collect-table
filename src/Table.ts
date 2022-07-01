@@ -4,7 +4,7 @@ import EventEmitter from "emitix";
 
 import type {
   addDataMetaObj, anyMap,
-  contextObj, dataSetObj,
+  contextObj,
   keyProviderFn,
   mapCollection,
   queryDef,
@@ -12,12 +12,10 @@ import type {
   tableObj,
   tableOptionsObj, tableRecordObj
 } from './types';
-import TableRecord from "./helpers/TableRecord";
-import DataSet from "./DataSet";
-import whereFn from "./helpers/whereFn";
-import dataSetJoinReducer from "./helpers/dataSetJoinReducer";
+import TableRecord from "./TableRecord";
 import { isCollection } from "./typeGuards";
 import QueryFetchStream from "./QueryFetchStream";
+import QueryResultSet from "./QueryResultSet";
 
 const { e } = utils;
 
@@ -155,15 +153,8 @@ export class Table extends EventEmitter implements tableObj {
 
   public queryEach(query, action) {
     this.transact(() => {
-      const dataSet = this.query(query);
-
-      dataSet.value.forEach((item, key) => {
-        if (item instanceof TableRecord) {
-          action(item, this.context, this);
-        } else {
-          action(this.recordForKey(key), this.context, this);
-        }
-      })
+      const records = this.query(query);
+      records.forEach(action);
     });
   }
 
@@ -239,27 +230,13 @@ export class Table extends EventEmitter implements tableObj {
 
   // -------------------------- query
 
-  query(query: queryDef): dataSetObj {
+  query(query: queryDef): tableRecordObj[] {
     if (query.tableName !== this.name) {
       throw e('badly targeted query; ', { query, table: this });
     }
 
-    let querySelector;
-    if (query.where) {
-      const whereTest = whereFn(query);
-      querySelector = (keys) => keys.filter((oKey) => {
-        const record = this.recordForKey(oKey);
-        const out = whereTest(record);
-        return out;
-      })
-    }
-
-    return new DataSet({
-      sourceTable: this.name,
-      selector: querySelector,
-      context: this.context,
-      reducer: query.joins ? dataSetJoinReducer(query) : undefined
-    });
+    const qrs = new QueryResultSet(this.context, query);
+    return qrs.records;
   }
 
   stream(query: queryDef, listener) {

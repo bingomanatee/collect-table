@@ -1,24 +1,12 @@
-import { BehaviorSubject, distinctUntilChanged, map } from "rxjs";
+import { BehaviorSubject, distinctUntilChanged } from "rxjs";
 import isEqual from 'lodash.isequal';
 import { contextObj, queryDef } from "./types";
-import { isCollection, isDataSet } from "./typeGuards";
-
-function queryValueOf(q) {
-  if (isDataSet(q)) {
-    return queryValueOf(q.value);
-  }
-  if (isCollection(q)) {
-    return q.map(queryValueOf).store;
-  }
-  return q;
-}
 
 function listen(qfs: QueryFetchStream) {
   const { query, context } = qfs;
   const subject = new BehaviorSubject(context.query(query));
 
   const response = subject.pipe(
-    map(queryValueOf),
     distinctUntilChanged(isEqual)
   );
 

@@ -1,0 +1,107 @@
+[
+  {
+    "tableName": "users",
+    "key": 1,
+    "data": {
+      "name": "Bill Smith",
+      "email": "bill@google.com",
+      "addID": 1
+    },
+    "joins": {
+      "home": [
+        {
+          "tableName": "addr",
+          "key": 1,
+          "data": {
+            "id": 1,
+            "addr": "111 First Street",
+            "state": "CA",
+            "country": "US",
+            "postcode": 12345
+          }
+        }
+      ]
+    }
+  },
+  {
+    "tableName": "users",
+    "key": 2,
+    "data": {
+      "name": "Sal Jones",
+      "email": "sal@yahoo.com",
+      "addID": 3
+    },
+    "joins": {
+      "home": [
+        {
+          "tableName": "addr",
+          "key": 3,
+          "data": {
+            "id": 3,
+            "addr": "333 Trinity Ave",
+            "state": "OR",
+            "country": "US",
+            "postcode": 72332
+          }
+        }
+      ]
+    }
+  },
+  {
+    "tableName": "users",
+    "key": 3,
+    "data": {
+      "name": "Dave Clark",
+      "email": "nosferatu@transylvania.com"
+    },
+    "joins": {
+      "home": []
+    }
+  },
+  {
+    "tableName": "users",
+    "key": 4,
+    "data": {
+      "name": "Ellen Fisk",
+      "email": "ellen@yahoo.com",
+      "addID": 2
+    },
+    "joins": {
+      "home": [
+        {
+          "tableName": "addr",
+          "key": 2,
+          "data": {
+            "id": 2,
+            "addr": "20 Broadway Ave",
+            "country": "US",
+            "state": "CA",
+            "postcode": 40443
+          }
+        }
+      ]
+    }
+  },
+  {
+    "tableName": "users",
+    "key": 5,
+    "data": {
+      "name": "Bob NoState",
+      "email": "bob@yahoo.com",
+      "addID": 4
+    },
+    "joins": {
+      "home": [
+        {
+          "tableName": "addr",
+          "key": 4,
+          "data": {
+            "id": 4,
+            "addr": "100 noState Lane",
+            "postcode": 123213
+          }
+        }
+      ]
+    }
+  }
+]

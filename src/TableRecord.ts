@@ -1,9 +1,9 @@
 import { enums, create } from '@wonderlandlabs/collect';
 import {
-  contextObj,
+  contextObj, mapCollection,
   tableRecordObj, tableRecordValueObj
-} from "../types";
-import { isCollection } from '../typeGuards';
+} from "./types";
+import { isCollection } from './typeGuards';
 
 const { FormEnum } = enums;
 
@@ -20,6 +20,26 @@ export default class TableRecord implements tableRecordObj {
     if (data !== undefined) {
       this._data = data;
     }
+  }
+
+  public notes?: mapCollection;
+
+  public setNote(key, value) {
+    if (!this.notes) {
+      this.notes = create(new Map());
+    }
+    this.notes.set(key, value);
+  }
+
+  protected get noteObj() {
+    if (!this.notes) {
+      return undefined;
+    }
+    return this.notes.reduce((meta, item, key) => {
+      // eslint-disable-next-line no-param-reassign
+      meta[key] = item;
+      return meta;
+    }, {})
   }
 
   public key: any;
@@ -45,7 +65,7 @@ export default class TableRecord implements tableRecordObj {
     if (!this.exists) {
       return undefined;
     }
-    const {coll} = this;
+    const { coll } = this;
     if (coll.form === FormEnum.scalar) {
       console.warn('attempt to get a field', field,
         'from scalar', this);
@@ -55,12 +75,12 @@ export default class TableRecord implements tableRecordObj {
   }
 
   private get coll() {
-    const {data} = this;
-    return !isCollection(data) ?  create(data) : data;
+    const { data } = this;
+    return !isCollection(data) ? create(data) : data;
   }
 
   set(field, value) {
-    const {coll} = this;
+    const { coll } = this;
     if (coll.form === FormEnum.scalar) {
       return;
     }
@@ -78,10 +98,54 @@ export default class TableRecord implements tableRecordObj {
    * a JSON of this item.
    */
   get value(): tableRecordValueObj {
-    return {
+
+    const out: tableRecordValueObj = {
       tableName: this.tableName,
       key: this.key,
-      data: this.data
+      data: this.data,
     }
+    if (this.notes?.hasKey('joins')) {
+      out.joins = this.joinObj;
+    }
+    return out;
+  }
+
+  /**
+   * returns joins flattened into an object -- or undefined/
+   */
+  get joinObj() {
+    const joins = this.notes?.get('joins');
+    if (!joins) {
+      return undefined;
+    }
+    return joins.reduce((m, records, name) => {
+      if (m) {
+        // eslint-disable-next-line no-param-reassign
+        m[name] = records;
+        return m;
+      }
+      return {[name]: records};
+    }, undefined);
+  }
+
+  get collection() {
+    if (isCollection(this.data)) {
+      return this.data;
+    }
+    return create(this.data);
+  }
+
+  get form() {
+    return this.collection.form;
+  }
+
+  public addJoin(key, items) {
+    if (!this.notes) {
+      this.notes = create(new Map());
+    }
+    if (!this.notes.hasKey('joins')) {
+      this.notes.set('joins', create(new Map()));
+    }
+    this.notes.get('joins').set(key, items);
   }
 }

@@ -3,8 +3,8 @@ import tap from 'tap';
 import { create } from '@wonderlandlabs/collect';
 
 import pkg from '../dist/index.js';
-import makeContext from "./testHelpers/makeContext.mjs";
-import qfs_result_stream from './testHelpers/qfs_result_stream.json' assert {type: 'json'};
+import makeContext from "../testHelpers/makeContext.mjs";
+import qfs_result_stream from '../testExpect/qfs_result_stream.json' assert {type: 'json'};
 const {
   default: createContext, constants: {
     joinFreq
@@ -60,7 +60,7 @@ tap.test('DataSet', (suite) => {
     );*/
 
     fs.end();
-  });
+  }, {skip: true});
 
   suite.end();
 })

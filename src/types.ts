@@ -1,6 +1,6 @@
 /* eslint-disable no-use-before-define */
 import EventEmitter from 'emitix';
-import type { collectionObj } from '@wonderlandlabs/collect';
+import { collectionObj } from '@wonderlandlabs/collect';
 import { binaryOperator, booleanOperator, changePhases, joinFreq } from "./constants";
 
 // ------------- MICRO DEFS
@@ -8,7 +8,10 @@ import { binaryOperator, booleanOperator, changePhases, joinFreq } from "./const
 export type helperMap = Map<queryJoinDef, tableRecordJoinObj>;
 export type anyMap = Map<any, any>;
 export type stringMap = Map<string, any>;
-export type mapCollection = collectionObj<Map<any, any>, any, any>;
+export type mapCollection = collectionObj<anyMap, any, any>;
+export type tableRecordNotesColl = collectionObj<stringMap, string, any>;
+export type recordSetMap = Map<any, tableRecordObj>;
+export type recordSetCollection = collectionObj<recordSetMap, any, tableRecordObj>;
 export type tableRecordMetaObj = {
   helpers?: helperMap;
   joins?: stringMap;
@@ -22,27 +25,8 @@ export type joinDefObj = {
   to: joinConnObj;
 };
 
-// ---- dataset
-
-export type dataSetSelectorFn = (keys: any[], source: mapCollection, ds: dataSetObj) => any[];
-export type dataSetReducerFn = (data: mapCollection, ds: dataSetObj) => any;
-export type dataSetMapFn = (data: tableRecordObj, ds: dataSetObj) => mapCollection;
-export type dataSetParams = {
-  context: contextObj,
-  sourceTable: string,
-  source?: mapCollection,
-  keys?: any[],
-  reducer?: dataSetReducerFn,
-  data?: mapCollection,
-  selector?: dataSetSelectorFn,
-  map?: dataSetMapFn,
-  meta?: any,
-  value?: any
-}
-
 // ----- parameter defs
 
-export type joinResult = tableRecordObj | tableRecordObj[] | undefined;
 export type tableOptionsObj = {
   keyProvider?: keyProviderFn;
   key?: any;
@@ -54,17 +38,18 @@ export type tableDefObj = {
   data?: any[];
   options?: tableOptionsObj;
 };
-export type addDataMetaObj = {key?: any};
+export type addDataMetaObj = { key?: any };
 export type contextOptionsObj = {
   joins?: joinDefObj[];
 };
+export type stringObj = { [key: string]: any };
 
 // -------------- functions
 
 export type innerBinaryFn = (recordTerm: any, recordAgainst: any, record: tableRecordObj, term: binaryTestObj) => boolean;
 export type dataCreatorFn = (table: tableObj, data: any, key?: any) => any;
-export type keyProviderFn = ( target: any, table: tableObj,meta?: any) => any[];
-export type joinFn = (record: tableRecordObj,  args?: any) => any;
+export type keyProviderFn = (target: any, table: tableObj, meta?: any) => any[];
+
 export type recordFn = (tableRecordObj) => any;
 export type recordTestFn = (tableRecordObj) => boolean;
 export type queryEachFn = (record: tableRecordValueObj, ctx: contextObj, table: tableObj) => any;
@@ -118,16 +103,6 @@ export type queryDef = {
 
 // -------------- CORE OBJECTS
 
-export type dataSetObj = {
-  context: contextObj;
-  source: mapCollection;
-  keys: any[];
-  selected: mapCollection;
-  data: mapCollection;
-  value: mapCollection;
-  tableName: string;
-}
-
 export type contextObj = {
   transact: (fn: (changesObj) => any) => any;
   now: number;
@@ -138,9 +113,9 @@ export type contextObj = {
   lastChange: changeObj | undefined;
   restoreTable(name: string, table: mapCollection);
   joins: collectionObj<Map<string, joinDefObj>, string, joinDefObj>;
-  query: (query: queryDef) => dataSetObj;
+  query: (query: queryDef) => tableRecordObj[];
   queryItems: (query: queryDef) => any[];
-  activeChanges: collectionObj<changeObj[],number,changeObj>;
+  activeChanges: collectionObj<changeObj[], number, changeObj>;
   stream: (query: queryDef, listener) => any;
 } & EventEmitter;
 
@@ -154,7 +129,7 @@ export type tableObj = {
   recordForKey: (key: any, meta?: tableRecordMetaObj) => tableRecordObj;
   context: contextObj;
   restore: (store: anyMap) => tableObj;
-  query: (query: queryDef) => dataSetObj;
+  query: (query: queryDef) => tableRecordObj[];
   queryEach: (query: queryDef, action: queryEachFn) => void;
   setMany: (keys, field, value) => void;
   stream: (query: queryDef, listener) => any;
@@ -182,6 +157,7 @@ export type tableRecordValueObj = {
   tableName: any,
   key: any,
   data: any,
+  joins?: {[joinName: string]: tableRecordObj[]};
 }
 export type tableRecordObj = {
   data: any;
@@ -193,4 +169,8 @@ export type tableRecordObj = {
   set: (field: any, value: any) => void;
   exists: boolean;
   value: tableRecordValueObj;
+  notes?: tableRecordNotesColl;
+  addJoin: (key: any, item: any) => void;
+  setNote: (field: any, value: any) => void;
+  readonly form: string;
 }
