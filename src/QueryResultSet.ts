@@ -75,8 +75,8 @@ export class QueryResultSet {
             if(localKeyName) {
               localCache.set(localKey, match);
             }
-            // console.log('from ', record.tableName, ' join ', helper.localConn, 'to', helper.foreignConn, 'plural is ', helper.foreignPlural,);
-              if (helper.foreignPlural) {
+            // console.log('from ', record.tableName, ' join ', helper.localConn, 'to', helper.foreignConn, 'plural is ', helper.foreignIsPlural,);
+              if (helper.foreignIsPlural) {
                 record.addJoin(helper.attachKey, match);
               } else {
                 record.addJoin(helper.attachKey, (match && (match.length > 0)) ? match[0] : null);

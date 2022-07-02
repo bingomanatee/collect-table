@@ -1,4 +1,4 @@
-import { contextObj, joinConnObj, joinDefObj, queryDef, queryJoinDef, } from "../types";
+import { contextObj, joinConnObj, joinDefObj, queryDef, queryJoinDef, tableRecordJoin, } from "../types";
 import { joinFreq } from "../constants";
 
 function isPlural(conn?: joinConnObj) {
@@ -10,6 +10,7 @@ function isPlural(conn?: joinConnObj) {
     case joinFreq.oneOrMore:
       return true;
       break;
+
     default:
       return false;
   }
@@ -18,7 +19,7 @@ function isPlural(conn?: joinConnObj) {
 /**
  * parses the individual join of a query; a helper class
  */
- export class TableRecordJoin {
+ export class TableRecordJoin implements tableRecordJoin {
   private query: queryDef;
 
   constructor(context, joinDef: queryJoinDef, query: queryDef) {
@@ -34,13 +35,59 @@ function isPlural(conn?: joinConnObj) {
     }
   }
 
+  joinDef: queryJoinDef;
+
+  localConn?: joinConnObj;
+
+  foreignConn?: joinConnObj;
+
+  private context: contextObj;
+
+  //  ----------------- derived fields
+
   get tableName() {
     return this.query.tableName;
   }
 
-  public joinDef: queryJoinDef;
+  get foreignIsPlural () {
+    return isPlural(this.foreignConn);
+  };
 
-  private context: contextObj;
+  get localIsPlural() {
+    return isPlural(this.localConn);
+  }
+
+  get joinName() {
+    return this.joinDef.joinName;
+  }
+
+  get attachKey() {
+    if (this.joinDef.as) {
+      return this.joinDef.as;
+    }
+    if (this.joinDef.joinName) {
+      return this.joinDef.joinName;
+    }
+    return '';
+  }
+
+  // ----------------- parsers
+
+  /**
+   * parses a transiently defined join
+   */
+  _fromLocal() {
+    if (!this.joinDef.connections) throw new Error('_fromLocal requires connections');
+
+    const [fromDef, toDef] = this.joinDef.connections;
+    if (fromDef.tableName === this.tableName) {
+      this.localConn = fromDef;
+      this.foreignConn = toDef;
+    } else if (toDef.tableName === this.tableName) {
+      this.foreignConn = fromDef;
+      this.localConn = toDef;
+    }
+  }
 
   _fromContext() {
     if (!this.context.joins.hasKey(this.joinName)) {
@@ -56,54 +103,6 @@ function isPlural(conn?: joinConnObj) {
       this.foreignConn = def.from;
     } else {
       console.warn('fromContext: cannot find tableName', this.tableName, 'in joinDef', def);
-    }
-  }
-
-  get foreignPlural () {
-    return isPlural(this.foreignConn);
-  };
-
-  get localIsPlural() {
-    return isPlural(this.localConn);
-  }
-
-
-  get onlyOneResult () {
-    if (this.foreignConn === undefined) return false;
-    return (this.foreignConn.frequency === joinFreq.noneOrOne) || (this.foreignConn.frequency === joinFreq.one);
-  }
-
-  /**
-   * @protected
-   */
-  get joinName() {
-    return this.joinDef.joinName;
-  }
-
-  get attachKey() {
-    if (this.joinDef.as) {
-      return this.joinDef.as;
-    }
-    if (this.joinDef.joinName) {
-      return this.joinDef.joinName;
-    }
-    return '';
-  }
-
-  localConn?: joinConnObj;
-
-  foreignConn?: joinConnObj;
-
-  _fromLocal() {
-    if (!this.joinDef.connections) throw new Error('_fromLocal requires connections');
-
-    const [fromDef, toDef] = this.joinDef.connections;
-    if (fromDef.tableName === this.tableName) {
-      this.localConn = fromDef;
-      this.foreignConn = toDef;
-    } else if (toDef.tableName === this.tableName) {
-      this.foreignConn = fromDef;
-      this.localConn = toDef;
     }
   }
 }

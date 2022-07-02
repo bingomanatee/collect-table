@@ -5,7 +5,7 @@ import { binaryOperator, booleanOperator, changePhases, joinFreq } from "./const
 
 // ------------- MICRO DEFS
 
-export type helperMap = Map<queryJoinDef, tableRecordJoinObj>;
+export type helperMap = Map<queryJoinDef, tableRecordJoin>;
 export type anyMap = Map<any, any>;
 export type stringMap = Map<string, any>;
 export type mapCollection = collectionObj<anyMap, any, any>;
@@ -16,8 +16,7 @@ export type tableRecordMetaObj = {
   helpers?: helperMap;
   joins?: stringMap;
 }
-// ------ joinedRecords
-
+// ------ joins
 
 export type joinDefObj = {
   name?: string;
@@ -25,6 +24,16 @@ export type joinDefObj = {
   to: joinConnObj;
 };
 
+export type tableRecordJoin = {
+  joinDef: queryJoinDef;
+  foreignConn?: joinConnObj;
+  localConn?: joinConnObj;
+  joinName?: string;
+  localIsPlural: boolean;
+  foreignIsPlural: boolean;
+  attachKey: string;
+  tableName: string;
+}
 // ----- parameter defs
 
 export type tableOptionsObj = {
@@ -145,12 +154,6 @@ export type tableObj = {
   removeQuery: (query: stringObj) => void;
   joinKeys: (keyMap: anyMap , joinName: string) =>void;
 } & EventEmitter;
-
-export type tableRecordJoinObj = {
-  updateJoinedRecord: (tableRecordObj) => void;
-  joinName: string;
-  attachKey: string;
-}
 
 export type changeObj = {
   time: number;

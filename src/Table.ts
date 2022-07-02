@@ -14,7 +14,7 @@ import type {
   queryDef,
   recordObj,
   tableObj,
-  tableOptionsObj
+  tableOptionsObj, tableRecordJoin
 } from './types';
 import Record from "./Record";
 import { isCollection } from "./typeGuards";
@@ -309,7 +309,16 @@ export class Table extends EventEmitter implements tableObj {
     });
   }
 
-  protected _joinKeyPair(localKey, foreignKey, helper) {
+  /**
+   * update the fields in the records -- or create a join record
+   * -- linking these two pieces of data
+   *
+   * @param localKey any
+   * @param foreignKey any
+   * @param helper
+   * @protected
+   */
+  protected _joinKeyPair(localKey, foreignKey, helper: tableRecordJoin) {
     const foreignTableName = helper.foreignConn?.tableName;
     const record = this.recordForKey(localKey);
     const { joinDef, localConn, foreignConn } = helper;
