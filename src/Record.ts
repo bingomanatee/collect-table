@@ -113,7 +113,7 @@ export default class Record implements recordObj {
   /**
    * returns joins flattened into an object -- or undefined/
    */
-  get joinObj() {
+  protected get joinObj() {
     const joins = this.notes?.get('joins');
     if (!joins) {
       return undefined;
@@ -139,7 +139,12 @@ export default class Record implements recordObj {
     return this.collection.form;
   }
 
-  public addJoin(key, items) {
+  /**
+   * adds a joined definition to the "meta.join" map.
+   * @param key the name of the join -- or the "as" field of the connection
+   * @param items one/several related records
+   */
+  public addJoin(key: any, items: recordObj | recordObj[] | null) {
     if (!this.notes) {
       this.notes = create(new Map());
     }

@@ -23,11 +23,11 @@ export class QueryResultSet {
 
   // the base, un-joined records, with no joins
   get records() {
-    const { table } = this;
+    const { table, query } = this;
     let records: recordSetCollection;
-    if (this.query.key) {
+    if (query.key) {
       records = table.data.cloneEmpty();
-      const record = table.recordForKey(this.query.key);
+      const record = table.recordForKey(query.key);
       if (record) {
         records.set(record.key, record);
       }
@@ -35,15 +35,15 @@ export class QueryResultSet {
       records = table.data.cloneShallow().map((_item, key) => table.recordForKey(key));
     }
 
-    if (this.query.where) {
-      const wf = whereFn(this.query);
+    if (query.where) {
+      const wf = whereFn(query);
       records.filter(wf);
     }
 
     records.forEach((record: recordObj, key) => {
-      this.query.joins?.forEach((joinDef) => {
+      query.joins?.forEach((joinDef) => {
         const localCache = new Map();
-        const helper = new TableRecordJoin(this.context, joinDef, this.query);
+        const helper = new TableRecordJoin(this.context, joinDef, query);
 
         if (helper.localConn && helper.foreignConn) {
           const localKeyName = helper.localConn.key;

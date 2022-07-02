@@ -86,20 +86,27 @@ export type whereUnionObj = {
 export type joinConnObj = {
   frequency?: joinFreq;
   as?: string;
-} & queryDef;
+  tableName: string;
+  key?: any;
+  joinTableField: string;
+}
+
+export type queryClauses = {
+  where?: whereTerm;
+  joins?: queryJoinDef[];
+}
 
 export type queryJoinDef = {
   joinName?: string;
   as?: string;
-  connections?: joinConnObj[]
-} & queryDef;
+  connections?: joinConnObj[];
+  joinTableName?: string;
+} & queryClauses;
 
 export type queryDef = {
   tableName: string;
   key?: any;
-  where?: whereTerm;
-  joins?: queryJoinDef[];
-}
+} & queryClauses;
 
 // -------------- CORE OBJECTS
 
@@ -136,6 +143,7 @@ export type tableObj = {
   removeKey: (key: any) => void;
   removeItem: (item: any) => void;
   removeQuery: (query: stringObj) => void;
+  joinKeys: (keyMap: anyMap , joinName: string) =>void;
 } & EventEmitter;
 
 export type tableRecordJoinObj = {
