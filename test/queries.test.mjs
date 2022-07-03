@@ -2,6 +2,7 @@
 import tap from 'tap';
 import pkg from '../dist/index.js';
 import makeContext from "../testHelpers/makeContext.mjs";
+import linkableContext from '../testHelpers/linkableContent.mjs';
 
 const { default: createContext, constants } = pkg;
 import deepHome from './../testExpect/deepHome.json' assert { type: 'json' };
@@ -61,11 +62,11 @@ tap.test('queries', (suite) => {
         }
       ]
     });
-/*
-        console.log('==================== simple home query:', JSON.stringify(records)
-          .replace(/\{/g, "\n{")
-        );
-*/
+    /*
+            console.log('==================== simple home query:', JSON.stringify(records)
+              .replace(/\{/g, "\n{")
+            );
+    */
 
     jTest.same(records, simpleHome);
     jTest.end();
@@ -87,9 +88,9 @@ tap.test('queries', (suite) => {
     });
 
 
-/*    console.log('==================== DEEP home query:', JSON.stringify(records)
-      .replace(/\{/g, "\n{")
-    );*/
+    /*    console.log('==================== DEEP home query:', JSON.stringify(records)
+          .replace(/\{/g, "\n{")
+        );*/
 
 
     jTest.same(records, deepHome);
@@ -121,17 +122,41 @@ tap.test('queries', (suite) => {
     const records = ctx.query({
       tableName: 'states',
       joins: [
-        { joinName: 'stateInfo' , joins: [{joinName: 'home'}]}
+        { joinName: 'stateInfo', joins: [{ joinName: 'home' }] }
       ]
     });
- /*   console.log('==================== state query DEEP:', JSON.stringify(records)
-      .replace(/\{/g, "\n{")
-    );*/
+    /*   console.log('==================== state query DEEP:', JSON.stringify(records)
+         .replace(/\{/g, "\n{")
+       );*/
 
     tmDeep.same(records, deepStateRS);
 
     tmDeep.end();
   });
+
+  suite.test('m2m joins', (m2m) => {
+
+    const ctx = linkableContext(createContext, joinFreq);
+    const [dave] = ctx.query({
+      tableName: 'users',
+      where: {
+        field: 'name', test: binaryOperator.eq, against: 'Dave Clark'
+      }
+    });
+    console.log('dave is ', dave);
+
+    const [whiteHat] = ctx.query({
+      tableName: 'hats',
+      where: {
+        field: 'name', test: binaryOperator.eq, against: 'white hat'
+      }
+    });
+    console.log('white hat is ', whiteHat);
+
+   // ctx.table('users').join(map, 'userHats');
+
+    m2m.end();
+  })
 
   suite.end();
 });

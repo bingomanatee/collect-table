@@ -3,8 +3,8 @@ import EventEmitter from 'emitix';
 import {Change} from './Change';
 import {
   changeObj,
-  contextObj,
-  contextOptionsObj,
+  baseObj,
+  baseOptsObj,
   mapCollection,
   queryDef,
   tableDefObj,
@@ -14,9 +14,9 @@ import {Table} from './Table';
 import TableJoin from "./TableJoin";
 import QueryFetchStream from "./QueryFetchStream";
 
-export default class Context extends EventEmitter implements contextObj {
+export default class Base extends EventEmitter implements baseObj {
 
-  constructor(tables?: tableDefObj[], options?: contextOptionsObj) {
+  constructor(tables?: tableDefObj[], options?: baseOptsObj) {
     super();
     if (tables) {
       tables.forEach(def => this.addTable(def));
@@ -47,7 +47,7 @@ export default class Context extends EventEmitter implements contextObj {
     return this.time;
   }
 
-  addOptions(_options?: contextOptionsObj) {
+  addOptions(_options?: baseOptsObj) {
     if (_options?.joins) {
       _options.joins.forEach((join) => this.addJoin(join));
     }

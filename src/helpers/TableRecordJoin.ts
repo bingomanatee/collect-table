@@ -1,4 +1,4 @@
-import { contextObj, joinConnObj, joinDefObj, queryDef, queryJoinDef, tableRecordJoin, } from "../types";
+import { baseObj, joinConnObj, joinDefObj, queryDef, queryJoinDef, tableRecordJoin, } from "../types";
 import { joinFreq } from "../constants";
 
 function isPlural(conn?: joinConnObj) {
@@ -22,13 +22,13 @@ function isPlural(conn?: joinConnObj) {
  export class TableRecordJoin implements tableRecordJoin {
   private query: queryDef;
 
-  constructor(context, joinDef: queryJoinDef, query: queryDef) {
+  constructor(base, joinDef: queryJoinDef, query: queryDef) {
     this.joinDef = joinDef;
     this.query = query;
-    this.context = context;
+    this.base = base;
 
     if (this.joinName) {
-       this._fromContext();
+       this._fromBase();
     }
     if (this.joinDef.connections) {
        this._fromLocal();
@@ -41,7 +41,7 @@ function isPlural(conn?: joinConnObj) {
 
   foreignConn?: joinConnObj;
 
-  private context: contextObj;
+  private base: baseObj;
 
   //  ----------------- derived fields
 
@@ -89,12 +89,12 @@ function isPlural(conn?: joinConnObj) {
     }
   }
 
-  _fromContext() {
-    if (!this.context.joins.hasKey(this.joinName)) {
-      console.error('cannot find ', this.joinName, 'in context', this.context.joins.store);
-      throw new Error(`TableRecordJoin._performContextJoin join - bad join name ${  this.joinName}`);
+  _fromBase() {
+    if (!this.base.joins.hasKey(this.joinName)) {
+      console.error('cannot find ', this.joinName, 'in base', this.base.joins.store);
+      throw new Error(`TableRecordJoin._fromBase join - bad join name ${  this.joinName}`);
     }
-    const def: joinDefObj = this.context.joins.get(this.joinName);
+    const def: joinDefObj = this.base.joins.get(this.joinName);
     if (def?.from?.tableName === this.tableName) {
       this.localConn = def.from;
       this.foreignConn = def.to;
@@ -102,7 +102,7 @@ function isPlural(conn?: joinConnObj) {
       this.localConn = def.to;
       this.foreignConn = def.from;
     } else {
-      console.warn('fromContext: cannot find tableName', this.tableName, 'in joinDef', def);
+      console.warn('_fromBase: cannot find tableName', this.tableName, 'in joinDef', def);
     }
   }
 }

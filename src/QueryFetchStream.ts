@@ -1,18 +1,18 @@
 import { BehaviorSubject, distinctUntilChanged } from "rxjs";
 import isEqual from 'lodash.isequal';
-import { contextObj, queryDef } from "./types";
+import { baseObj, queryDef } from "./types";
 
 function listen(qfs: QueryFetchStream) {
-  const { query, context } = qfs;
-  const subject = new BehaviorSubject(context.query(query));
+  const { query, base } = qfs;
+  const subject = new BehaviorSubject(base.query(query));
 
   const response = subject.pipe(
     distinctUntilChanged(isEqual)
   );
 
-  context.on('change-complete', (change) => {
-    if (context.activeChanges.size === 1 && context.lastChange?.time === change.time) {
-      subject.next(context.query(query));
+  base.on('change-complete', (change) => {
+    if (base.activeChanges.size === 1 && base.lastChange?.time === change.time) {
+      subject.next(base.query(query));
     }
   });
 
@@ -20,12 +20,12 @@ function listen(qfs: QueryFetchStream) {
 }
 
 export class QueryFetchStream {
-  constructor(context, query) {
-    this.context = context;
+  constructor(base, query) {
+    this.base = base;
     this.query = query;
   }
 
-  context: contextObj;
+  base: baseObj;
 
   query: queryDef;
 
@@ -43,7 +43,7 @@ export class QueryFetchStream {
   }
 
   get current() {
-    return this.context.query(this.subject);
+    return this.base.query(this.subject);
   }
 
 }

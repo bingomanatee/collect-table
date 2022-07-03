@@ -1,4 +1,4 @@
-import {contextObj, joinConnObj, joinDefObj} from "./types";
+import {baseObj, joinConnObj, joinDefObj} from "./types";
 import {joinFreq} from "./constants";
 
 function asConn(def) {
@@ -21,7 +21,7 @@ function asConn(def) {
 }
 
 export default class TableJoin implements joinDefObj{
-  context: contextObj;
+  base: baseObj;
 
   from: joinConnObj;
 
@@ -29,8 +29,8 @@ export default class TableJoin implements joinDefObj{
 
   name?: string;
 
-  constructor(context, def, opts?) {
-    this.context = context;
+  constructor(base, def, opts?) {
+    this.base = base;
     if (Array.isArray(def)) {
       const [fromTable, toTable] = def;
       this.from = asConn(fromTable);

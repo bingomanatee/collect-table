@@ -1,8 +1,8 @@
-import Context from "./Context";
+import Base from "./Base";
 
 export {QueryFetchStream} from './QueryFetchStream';
-export { Context };
+export { Base };
 export * as constants from './constants';
 export { Table } from "./Table";
 export {TableRecordJoin} from "./helpers/TableRecordJoin";
-export default (tables?, opts?) => new Context(tables, opts);
+export default (tables?, opts?) => new Base(tables, opts);

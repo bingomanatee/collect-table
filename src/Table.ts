@@ -7,7 +7,7 @@ import type { collectionObj } from "@wonderlandlabs/collect/types/types";
 import type {
   addDataMetaObj,
   anyMap,
-  contextObj,
+  baseObj,
   dataCreatorFn,
   keyProviderFn,
   mapCollection,
@@ -17,7 +17,7 @@ import type {
   tableOptionsObj, tableRecordJoin
 } from './types';
 import Record from "./Record";
-import { isCollection } from "./typeGuards";
+import { isCollection, isTableRecord } from "./typeGuards";
 import QueryFetchStream from "./QueryFetchStream";
 import QueryResultSet from "./QueryResultSet";
 import TableRecordJoin from "./helpers/TableRecordJoin";
@@ -26,32 +26,32 @@ import { binaryOperator, booleanOperator } from "./constants";
 const { e } = utils;
 
 const KeyProviders = {
-  _contextCache: new Map(),
+  _baseCache: new Map(),
   Default: (table: tableObj) => {
-    const { context } = table;
-    if (!KeyProviders._contextCache.has(context)) {
-      KeyProviders._contextCache.set(context, 1);
+    const { base } = table;
+    if (!KeyProviders._baseCache.has(base)) {
+      KeyProviders._baseCache.set(base, 1);
     }
-    const index = KeyProviders._contextCache.get(context);
-    KeyProviders._contextCache.set(context, index + 1);
+    const index = KeyProviders._baseCache.get(base);
+    KeyProviders._baseCache.set(base, index + 1);
     return index;
   },
 };
 
 export class Table extends EventEmitter implements tableObj {
-  public context: contextObj;
+  public base: baseObj;
 
   name: string;
 
   protected dataCreator: dataCreatorFn | undefined;
 
   constructor(
-    context: contextObj,
+    base: baseObj,
     name: string,
     options?: tableOptionsObj
   ) {
     super();
-    this.context = context;
+    this.base = base;
     this.name = name;
     this._data = create(new Map([]));
     this.addOptions(options);
@@ -89,8 +89,8 @@ export class Table extends EventEmitter implements tableObj {
   }
 
   get data(): mapCollection {
-    if (this.context.lastChange && !this.context.lastChange.backupTables.hasKey(this.name)) {
-      this.context.lastChange.saveTableBackup(this.name, new Map(this._data.store));
+    if (this.base.lastChange && !this.base.lastChange.backupTables.hasKey(this.name)) {
+      this.base.lastChange.saveTableBackup(this.name, new Map(this._data.store));
     }
     return this._data;
   }
@@ -122,7 +122,7 @@ export class Table extends EventEmitter implements tableObj {
   }
 
   public recordForKey(key) {
-    return new Record(this.context, this.name, key);
+    return new Record(this.base, this.name, key);
   }
 
   /**
@@ -146,9 +146,9 @@ export class Table extends EventEmitter implements tableObj {
 
   // ----------------- Transact
 
-  transact(action: (context: contextObj) => any, onError?: (err: any) => any) {
+  transact(action: (base: baseObj) => any, onError?: (err: any) => any) {
     try {
-      const out = this.context.transact(action);
+      const out = this.base.transact(action);
       if (out.error) {
         throw out.error;
       }
@@ -269,16 +269,17 @@ export class Table extends EventEmitter implements tableObj {
   // -------------------------- query
 
   query(query: queryDef): recordObj[] {
-    if (query.tableName !== this.name) {
+    if (query.tableName !== this.name)
+    {
       throw e('badly targeted query; ', { query, table: this });
     }
 
-    const qrs = new QueryResultSet(this.context, query);
+    const qrs = new QueryResultSet(this.base, query);
     return qrs.records;
   }
 
   stream(query: queryDef, listener) {
-    return new QueryFetchStream(this.context, query).subscribe(listener);
+    return new QueryFetchStream(this.base, query).subscribe(listener);
   }
 
   /**
@@ -286,20 +287,20 @@ export class Table extends EventEmitter implements tableObj {
    * @param keys
    * @param joinName
    */
-  joinKeys(keyMap: anyMap, joinName?: string) {
+  join(keyMap: anyMap, joinName: string) {
     const query = {
       tableName: this.name,
       joins: [{
         joinName
       }]
     };
-    const helper = new TableRecordJoin(this.context, query.joins[0], query);
+    const helper = new TableRecordJoin(this.base, query.joins[0], query);
 
     keyMap.forEach((foreignKeys, localKeys) => {
       if (!(foreignKeys && localKeys)) {
         return;
       }
-      const combs = { foreignKeys: toArray(foreignKeys), localKeys: toArray(localKeys) }
+      const combs = { foreignKeys: arrayOfKeys(foreignKeys), localKeys: arrayOfKeys(localKeys) }
       if (!((combs.foreignKeys.length > 0) && (combs.localKeys.length > 0))) {
         return;
       }
@@ -325,10 +326,10 @@ export class Table extends EventEmitter implements tableObj {
     const { joinTableName } = joinDef;
     if (!(localConn &&
       foreignConn &&
-      record.exists && foreignTableName && this.context.hasTable(foreignTableName))) {
+      record.exists && foreignTableName && this.base.hasTable(foreignTableName))) {
       return;
     }
-    const foreignRecord = this.context.table(foreignTableName).recordForKey(foreignKey);
+    const foreignRecord = this.base.table(foreignTableName).recordForKey(foreignKey);
     if (!(foreignRecord.exists)) {
       return;
     }
@@ -336,7 +337,7 @@ export class Table extends EventEmitter implements tableObj {
     if (joinTableName) {
       const localJoinField = localConn.joinTableField || localConn.tableName;
       const foreignJoinField = localConn.joinTableField || foreignConn.tableName;
-      const joinTable = this.context.table(joinTableName);
+      const joinTable = this.base.table(joinTableName);
 
       const existing = joinTable.query({
         tableName: joinTableName,
@@ -379,9 +380,9 @@ export class Table extends EventEmitter implements tableObj {
   }
 }
 
-function toArray(a) {
-  if (Array.isArray(a)) {
-    return a;
+function arrayOfKeys(a) {
+  if (!Array.isArray(a)) {
+    return arrayOfKeys([a]);
   }
-  return [a];
+  return a.map((r) => isTableRecord(r) ? r.key : r);
 }

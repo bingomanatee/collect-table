@@ -31,7 +31,7 @@ declare enum booleanOperator {
     or = "||"
 }
 
-declare type helperMap = Map<queryJoinDef, tableRecordJoinObj>;
+declare type helperMap = Map<queryJoinDef, tableRecordJoin>;
 declare type anyMap = Map<any, any>;
 declare type stringMap = Map<string, any>;
 declare type mapCollection = collectionObj<anyMap, any, any>;
@@ -46,6 +46,16 @@ declare type joinDefObj = {
     name?: string;
     from: joinConnObj;
     to: joinConnObj;
+};
+declare type tableRecordJoin = {
+    joinDef: queryJoinDef;
+    foreignConn?: joinConnObj;
+    localConn?: joinConnObj;
+    joinName?: string;
+    localIsPlural: boolean;
+    foreignIsPlural: boolean;
+    attachKey: string;
+    tableName: string;
 };
 declare type tableOptionsObj = {
     keyProvider?: keyProviderFn;
@@ -72,7 +82,7 @@ declare type dataCreatorFn = (table: tableObj, data: any, key?: any) => any;
 declare type keyProviderFn = (target: any, table: tableObj, meta?: any) => any[];
 declare type recordFn = (tableRecordObj: any) => any;
 declare type recordTestFn = (tableRecordObj: any) => boolean;
-declare type queryEachFn = (record: tableRecordValueObj, ctx: contextObj, table: tableObj) => any;
+declare type queryEachFn = (record: tableRecordValueObj, ctx: baseObj, table: tableObj) => any;
 declare type whereTerm = recordTestFn | binaryTestObj | whereUnionObj;
 declare type RequireAtLeastOne<T, Keys extends keyof T = keyof T> = Pick<T, Exclude<keyof T, Keys>> & {
     [K in Keys]-?: Required<Pick<T, K>> & Partial<Pick<T, Exclude<Keys, K>>>;
@@ -93,19 +103,26 @@ declare type whereUnionObj = {
 declare type joinConnObj = {
     frequency?: joinFreq;
     as?: string;
-} & queryDef;
+    tableName: string;
+    key?: any;
+    joinTableField: string;
+};
+declare type queryClauses = {
+    where?: whereTerm;
+    joins?: queryJoinDef[];
+};
 declare type queryJoinDef = {
     joinName?: string;
     as?: string;
     connections?: joinConnObj[];
-} & queryDef;
+    joinTableName?: string;
+} & queryClauses;
 declare type queryDef = {
     tableName: string;
     key?: any;
-    where?: whereTerm;
-    joins?: queryJoinDef[];
-};
-declare type contextObj = {
+    keys?: any[];
+} & queryClauses;
+declare type baseObj = {
     transact: (fn: (changesObj: any) => any) => any;
     now: number;
     next: number;
@@ -127,7 +144,7 @@ declare type tableObj = {
     addData: (data: any, meta?: any) => any;
     getData: (key: any) => any | undefined;
     recordForKey: (key: any, meta?: tableRecordMetaObj) => recordObj;
-    context: contextObj;
+    base: baseObj;
     restore: (store: anyMap) => tableObj;
     query: (query: queryDef) => recordObj[];
     queryEach: (query: queryDef, action: queryEachFn) => void;
@@ -136,15 +153,11 @@ declare type tableObj = {
     removeKey: (key: any) => void;
     removeItem: (item: any) => void;
     removeQuery: (query: stringObj) => void;
+    join: (keyMap: anyMap, joinName: string) => void;
 } & EventEmitter;
-declare type tableRecordJoinObj = {
-    updateJoinedRecord: (tableRecordObj: any) => void;
-    joinName: string;
-    attachKey: string;
-};
 declare type changeObj = {
     time: number;
-    context: contextObj;
+    base: baseObj;
     backupTables: mapCollection;
     saveTableBackup: (tableName: string, store: Map<any, any>) => void;
     phase: changePhases;
@@ -166,7 +179,7 @@ declare type recordObj = {
     tableName: string;
     key: any;
     table: tableObj;
-    context: contextObj;
+    base: baseObj;
     get: (field: any) => any;
     setField: (field: any, value: any) => void;
     exists: boolean;
@@ -177,4 +190,4 @@ declare type recordObj = {
     readonly form: string;
 };
 
-export { addDataMetaObj, anyMap, binaryTestObj, changeObj, contextObj, contextOptionsObj, dataCreatorFn, helperMap, innerBinaryFn, joinConnObj, joinDefObj, keyProviderFn, mapCollection, queryDef, queryEachFn, queryJoinDef, recordFn, recordObj, recordSetCollection, recordSetMap, recordTestFn, stringMap, stringObj, tableDefObj, tableObj, tableOptionsObj, tableRecordJoinObj, tableRecordMetaObj, tableRecordNotesColl, tableRecordValueObj, whereTerm, whereUnionObj };
+export { addDataMetaObj, anyMap, baseObj, binaryTestObj, changeObj, contextOptionsObj, dataCreatorFn, helperMap, innerBinaryFn, joinConnObj, joinDefObj, keyProviderFn, mapCollection, queryClauses, queryDef, queryEachFn, queryJoinDef, recordFn, recordObj, recordSetCollection, recordSetMap, recordTestFn, stringMap, stringObj, tableDefObj, tableObj, tableOptionsObj, tableRecordJoin, tableRecordMetaObj, tableRecordNotesColl, tableRecordValueObj, whereTerm, whereUnionObj };

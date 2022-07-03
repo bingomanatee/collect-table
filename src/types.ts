@@ -48,7 +48,7 @@ export type tableDefObj = {
   options?: tableOptionsObj;
 };
 export type addDataMetaObj = { key?: any };
-export type contextOptionsObj = {
+export type baseOptsObj = {
   joins?: joinDefObj[];
 };
 export type stringObj = { [key: string]: any };
@@ -61,7 +61,7 @@ export type keyProviderFn = (target: any, table: tableObj, meta?: any) => any[];
 
 export type recordFn = (tableRecordObj) => any;
 export type recordTestFn = (tableRecordObj) => boolean;
-export type queryEachFn = (record: tableRecordValueObj, ctx: contextObj, table: tableObj) => any;
+export type queryEachFn = (record: tableRecordValueObj, ctx: baseObj, table: tableObj) => any;
 
 // --- query : where
 
@@ -115,11 +115,12 @@ export type queryJoinDef = {
 export type queryDef = {
   tableName: string;
   key?: any;
+  keys?: any[];
 } & queryClauses;
 
 // -------------- CORE OBJECTS
 
-export type contextObj = {
+export type baseObj = {
   transact: (fn: (changesObj) => any) => any;
   now: number;
   next: number;
@@ -143,7 +144,7 @@ export type tableObj = {
   addData: (data: any, meta?: any) => any; // returns key
   getData: (key: any) => any | undefined;
   recordForKey: (key: any, meta?: tableRecordMetaObj) => recordObj;
-  context: contextObj;
+  base: baseObj;
   restore: (store: anyMap) => tableObj;
   query: (query: queryDef) => recordObj[];
   queryEach: (query: queryDef, action: queryEachFn) => void;
@@ -152,12 +153,12 @@ export type tableObj = {
   removeKey: (key: any) => void;
   removeItem: (item: any) => void;
   removeQuery: (query: stringObj) => void;
-  joinKeys: (keyMap: anyMap , joinName: string) =>void;
+  join: (keyMap: anyMap , joinName: string) =>void;
 } & EventEmitter;
 
 export type changeObj = {
   time: number;
-  context: contextObj;
+  base: baseObj;
   backupTables: mapCollection;
   saveTableBackup: (tableName: string, store: Map<any, any>) => void;
   phase: changePhases;
@@ -178,7 +179,7 @@ export type recordObj = {
   tableName: string;
   key: any;
   table: tableObj;
-  context: contextObj;
+  base: baseObj;
   get: (field: any) => any;
   setField: (field: any, value: any) => void;
   exists: boolean;

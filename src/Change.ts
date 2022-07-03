@@ -1,5 +1,5 @@
 import create from '@wonderlandlabs/collect';
-import type { changeObj, contextObj, mapCollection } from './types';
+import type { changeObj, baseObj, mapCollection } from './types';
 import { changePhases } from "./constants";
 
 /**
@@ -9,7 +9,7 @@ import { changePhases } from "./constants";
 export class Change implements changeObj {
   time: number;
 
-  context: contextObj;
+  base: baseObj;
 
   phase: changePhases;
 
@@ -22,7 +22,7 @@ export class Change implements changeObj {
 
   applyBackups() {
     this.backupTables.forEach((table, name) => {
-      this.context.restoreTable(name, table);
+      this.base.restoreTable(name, table);
     })
   }
 
@@ -44,9 +44,9 @@ export class Change implements changeObj {
     return this.phase === changePhases.failed;
   }
 
-  constructor(changes: contextObj) {
+  constructor(changes: baseObj) {
     this.time = changes.next;
-    this.context = changes;
+    this.base = changes;
     this.phase = changePhases.started;
   }
 
@@ -55,7 +55,7 @@ export class Change implements changeObj {
       return;
     }
     this.phase = changePhases.started;
-    this.context.emit('change-started', this);
+    this.base.emit('change-started', this);
   }
 
   executed() {
@@ -63,13 +63,13 @@ export class Change implements changeObj {
       return;
     }
     this.phase = changePhases.executed;
-    this.context.emit('change-executed', this);
+    this.base.emit('change-executed', this);
   }
 
   completed() {
     if (!this.isFailed) {
       this.phase = changePhases.complete;
-      this.context.emit('change-complete', this);
+      this.base.emit('change-complete', this);
     }
   }
 
@@ -78,7 +78,7 @@ export class Change implements changeObj {
       return;
     }
     this.phase = changePhases.validated;
-    this.context.emit('change-validated', this);
+    this.base.emit('change-validated', this);
   }
 
   failed(err: any) {
@@ -87,6 +87,6 @@ export class Change implements changeObj {
     }
     this.error = err;
     this.phase = changePhases.failed;
-    this.context.emit('change-failed', this);
+    this.base.emit('change-failed', this);
   }
 }

@@ -1,16 +1,16 @@
 // import create from '@wonderlandlabs/collect';
-import { contextObj, queryDef, recordObj, recordSetCollection } from "./types";
+import { baseObj, queryDef, recordObj, recordSetCollection } from "./types";
 import TableRecordJoin from "./helpers/TableRecordJoin";
 import whereFn from "./helpers/whereFn";
 
 export class QueryResultSet {
   private query: queryDef;
 
-  private context: contextObj;
+  private base: baseObj;
 
-  constructor(context: contextObj, query: queryDef) {
+  constructor(base: baseObj, query: queryDef) {
     this.query = query;
-    this.context = context;
+    this.base = base;
   }
 
   get tableName() {
@@ -18,7 +18,7 @@ export class QueryResultSet {
   }
 
   get table() {
-    return this.context.table(this.tableName);
+    return this.base.table(this.tableName);
   }
 
   // the base, un-joined records, with no joins
@@ -40,16 +40,16 @@ export class QueryResultSet {
       records.filter(wf);
     }
 
-    records.forEach((record: recordObj, key) => {
-      query.joins?.forEach((joinDef) => {
-        const localCache = new Map();
-        const helper = new TableRecordJoin(this.context, joinDef, query);
+    query.joins?.forEach((joinDef) => {
+      const localCache = new Map();
+      const helper = new TableRecordJoin(this.base, joinDef, query);
 
-        if (helper.localConn && helper.foreignConn) {
-          const localKeyName = helper.localConn.key;
-          const foreignKeyName = helper.foreignConn.key;
-          const foreignTableName = helper.foreignConn?.tableName;
-          // @TODO: index better
+      if (helper.localConn && helper.foreignConn) {
+        const localKeyName = helper.localConn.key;
+        const foreignKeyName = helper.foreignConn.key;
+        const foreignTableName = helper.foreignConn?.tableName;
+        // @TODO: index better
+        records.forEach((record: recordObj, key) => {
 
           let localKey = key;
           if (localKeyName) {
@@ -65,25 +65,25 @@ export class QueryResultSet {
               where = (foreignRecord) => foreignRecord.get(foreignKeyName) === localKey;
             }
 
-            const matchingCollection = new QueryResultSet(this.context, {
+            const matchingCollection = new QueryResultSet(this.base, {
               tableName: foreignTableName,
               where,
               joins: joinDef.joins
             });
 
-            const match = matchingCollection.records;
-            if(localKeyName) {
+            let match = matchingCollection.records;
+
+            // console.log('from ', record.tableName, ' join ', helper.localConn, 'to', helper.foreignConn, 'plural is ', helper.foreignIsPlural,);
+            if (!helper.foreignIsPlural) {
+              match = (match && (match.length > 0)) ? match[0] : null;
+            }
+            if (localKeyName) {
               localCache.set(localKey, match);
             }
-            // console.log('from ', record.tableName, ' join ', helper.localConn, 'to', helper.foreignConn, 'plural is ', helper.foreignIsPlural,);
-              if (helper.foreignIsPlural) {
-                record.addJoin(helper.attachKey, match);
-              } else {
-                record.addJoin(helper.attachKey, (match && (match.length > 0)) ? match[0] : null);
-              }
+            record.addJoin(helper.attachKey, match);
           }
-        }
-      });
+        });
+      }
     });
 
     return records.cloneShallow().map((r) => r.value).items

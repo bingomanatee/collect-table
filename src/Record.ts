@@ -1,6 +1,6 @@
 import { enums, create } from '@wonderlandlabs/collect';
 import {
-  contextObj, mapCollection,
+  baseObj, mapCollection,
   recordObj, tableRecordValueObj
 } from "./types";
 import { isCollection } from './typeGuards';
@@ -9,12 +9,12 @@ const { FormEnum } = enums;
 
 /**
  * a bundled pointer to a record in a tableName.
- * In some contexts, data is deterministic from the constructor;
+ * In some bases, data is deterministic from the constructor;
  * if not defined (the normal use case) it is read from the table with every call to `.data`.
  */
 export default class Record implements recordObj {
-  constructor(context: contextObj, tableName: string, key: any, data?: any) {
-    this.context = context;
+  constructor(base: baseObj, tableName: string, key: any, data?: any) {
+    this.base = base;
     this.key = key;
     this.tableName = tableName;
     if (data !== undefined) {
@@ -46,10 +46,10 @@ export default class Record implements recordObj {
 
   public tableName: string;
 
-  public context: contextObj;
+  public base: baseObj;
 
   get table() {
-    return this.context.table(this.tableName);
+    return this.base.table(this.tableName);
   }
 
   protected _data;
