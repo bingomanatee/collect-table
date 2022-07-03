@@ -302,7 +302,7 @@ export class Table extends EventEmitter implements tableObj {
         return;
       }
       const combs = { foreignKeys: arrayOfKeys(foreignKeys), localKeys: arrayOfKeys(localKeys) }
-      console.log('combs: ', combs);
+
       if (!((combs.foreignKeys.length > 0) && (combs.localKeys.length > 0))) {
         return;
       }
@@ -359,13 +359,8 @@ export class Table extends EventEmitter implements tableObj {
           bool: booleanOperator.and,
         }
       });
-      console.log('existing:', existing);
+
       if (!existing.length){
-        console.log('adding', {
-            [localJoinField]: localKey,
-            [foreignJoinField]: foreignKey
-          }, 'to', joinTable.name
-        );
         joinTable.addData({
           [localJoinField]: localKey,
           [foreignJoinField]: foreignKey
