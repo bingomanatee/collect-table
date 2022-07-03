@@ -46,12 +46,14 @@ declare type joinDefObj = {
     name?: string;
     from: joinConnObj;
     to: joinConnObj;
+    joinTableName?: string;
 };
 declare type tableRecordJoin = {
     joinDef: queryJoinDef;
     foreignConn?: joinConnObj;
     localConn?: joinConnObj;
     joinName?: string;
+    baseJoinDef: queryJoinDef | undefined;
     localIsPlural: boolean;
     foreignIsPlural: boolean;
     attachKey: string;
@@ -71,7 +73,7 @@ declare type tableDefObj = {
 declare type addDataMetaObj = {
     key?: any;
 };
-declare type contextOptionsObj = {
+declare type baseOptsObj = {
     joins?: joinDefObj[];
 };
 declare type stringObj = {
@@ -190,4 +192,4 @@ declare type recordObj = {
     readonly form: string;
 };
 
-export { addDataMetaObj, anyMap, baseObj, binaryTestObj, changeObj, contextOptionsObj, dataCreatorFn, helperMap, innerBinaryFn, joinConnObj, joinDefObj, keyProviderFn, mapCollection, queryClauses, queryDef, queryEachFn, queryJoinDef, recordFn, recordObj, recordSetCollection, recordSetMap, recordTestFn, stringMap, stringObj, tableDefObj, tableObj, tableOptionsObj, tableRecordJoin, tableRecordMetaObj, tableRecordNotesColl, tableRecordValueObj, whereTerm, whereUnionObj };
+export { addDataMetaObj, anyMap, baseObj, baseOptsObj, binaryTestObj, changeObj, dataCreatorFn, helperMap, innerBinaryFn, joinConnObj, joinDefObj, keyProviderFn, mapCollection, queryClauses, queryDef, queryEachFn, queryJoinDef, recordFn, recordObj, recordSetCollection, recordSetMap, recordTestFn, stringMap, stringObj, tableDefObj, tableObj, tableOptionsObj, tableRecordJoin, tableRecordMetaObj, tableRecordNotesColl, tableRecordValueObj, whereTerm, whereUnionObj };

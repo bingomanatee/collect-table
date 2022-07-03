@@ -18,8 +18,8 @@ import type {
 } from './types';
 import Record from "./Record";
 import { isCollection, isTableRecord } from "./typeGuards";
-import QueryFetchStream from "./QueryFetchStream";
-import QueryResultSet from "./QueryResultSet";
+import QueryFetchStream from "./helpers/QueryFetchStream";
+import QueryResultSet from "./helpers/QueryResultSet";
 import TableRecordJoin from "./helpers/TableRecordJoin";
 import { binaryOperator, booleanOperator } from "./constants";
 
@@ -271,7 +271,8 @@ export class Table extends EventEmitter implements tableObj {
   query(query: queryDef): recordObj[] {
     if (query.tableName !== this.name)
     {
-      throw e('badly targeted query; ', { query, table: this });
+      console.log('table.query: badly targeted query, wrong tablename; ',query, 'should be ', this.name);
+      throw new Error(`table.query: badly targeted query, wrong tablename, not "${this.name}"; `);
     }
 
     const qrs = new QueryResultSet(this.base, query);
@@ -301,6 +302,7 @@ export class Table extends EventEmitter implements tableObj {
         return;
       }
       const combs = { foreignKeys: arrayOfKeys(foreignKeys), localKeys: arrayOfKeys(localKeys) }
+      console.log('combs: ', combs);
       if (!((combs.foreignKeys.length > 0) && (combs.localKeys.length > 0))) {
         return;
       }
@@ -322,8 +324,9 @@ export class Table extends EventEmitter implements tableObj {
   protected _joinKeyPair(localKey, foreignKey, helper: tableRecordJoin) {
     const foreignTableName = helper.foreignConn?.tableName;
     const record = this.recordForKey(localKey);
-    const { joinDef, localConn, foreignConn } = helper;
-    const { joinTableName } = joinDef;
+    const { localConn, foreignConn, baseJoinDef } = helper;
+    const joinTableName = baseJoinDef ? baseJoinDef.joinTableName : null;
+
     if (!(localConn &&
       foreignConn &&
       record.exists && foreignTableName && this.base.hasTable(foreignTableName))) {
@@ -356,7 +359,13 @@ export class Table extends EventEmitter implements tableObj {
           bool: booleanOperator.and,
         }
       });
+      console.log('existing:', existing);
       if (!existing.length){
+        console.log('adding', {
+            [localJoinField]: localKey,
+            [foreignJoinField]: foreignKey
+          }, 'to', joinTable.name
+        );
         joinTable.addData({
           [localJoinField]: localKey,
           [foreignJoinField]: foreignKey
@@ -374,6 +383,7 @@ export class Table extends EventEmitter implements tableObj {
     } else if (foreignConn.key) {
       foreignRecord.setField(foreignConn.key, localKey);
     } else {
+      console.log('m2m??? baseJoinDef: ', baseJoinDef);
       throw new Error('many-to-many not implemented');
     }
 
@@ -384,5 +394,8 @@ function arrayOfKeys(a) {
   if (!Array.isArray(a)) {
     return arrayOfKeys([a]);
   }
-  return a.map((r) => isTableRecord(r) ? r.key : r);
+  return a.map((r) => {
+    const ir = isTableRecord(r);
+    return ir ? r.key : r
+  });
 }

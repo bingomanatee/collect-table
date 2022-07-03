@@ -1,6 +1,6 @@
 import Base from "./Base";
 
-export {QueryFetchStream} from './QueryFetchStream';
+export {QueryFetchStream} from './helpers/QueryFetchStream';
 export { Base };
 export * as constants from './constants';
 export { Table } from "./Table";

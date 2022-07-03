@@ -29,6 +29,8 @@ export default class TableJoin implements joinDefObj{
 
   name?: string;
 
+  joinTableName?: string;
+
   constructor(base, def, opts?) {
     this.base = base;
     if (Array.isArray(def)) {
@@ -42,6 +44,7 @@ export default class TableJoin implements joinDefObj{
       } = def;
       this.from = asConn(fromTable);
       this.to = asConn(toTable);
+      this.joinTableName = def.joinTableName;
       this.name = def.name;
     }
 

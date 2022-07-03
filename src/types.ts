@@ -22,6 +22,7 @@ export type joinDefObj = {
   name?: string;
   from: joinConnObj;
   to: joinConnObj;
+  joinTableName?: string;
 };
 
 export type tableRecordJoin = {
@@ -29,6 +30,7 @@ export type tableRecordJoin = {
   foreignConn?: joinConnObj;
   localConn?: joinConnObj;
   joinName?: string;
+  baseJoinDef: queryJoinDef | undefined;
   localIsPlural: boolean;
   foreignIsPlural: boolean;
   attachKey: string;

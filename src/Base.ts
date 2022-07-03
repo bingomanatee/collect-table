@@ -12,7 +12,7 @@ import {
 } from './types';
 import {Table} from './Table';
 import TableJoin from "./TableJoin";
-import QueryFetchStream from "./QueryFetchStream";
+import QueryFetchStream from "./helpers/QueryFetchStream";
 
 export default class Base extends EventEmitter implements baseObj {
 

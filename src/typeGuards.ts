@@ -14,5 +14,5 @@ export function isTableRecord(target) : target is recordObj {
     return false;
   }
 
-  return 'key,data,base'.split(',').every((f) => f in target);
+  return 'key,data,tableName'.split(',').every((f) => f in target);
 }

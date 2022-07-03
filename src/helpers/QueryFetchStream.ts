@@ -1,6 +1,6 @@
 import { BehaviorSubject, distinctUntilChanged } from "rxjs";
 import isEqual from 'lodash.isequal';
-import { baseObj, queryDef } from "./types";
+import { baseObj, queryDef } from "../types";
 
 function listen(qfs: QueryFetchStream) {
   const { query, base } = qfs;

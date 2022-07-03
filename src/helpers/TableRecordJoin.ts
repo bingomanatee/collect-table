@@ -1,4 +1,4 @@
-import { baseObj, joinConnObj, joinDefObj, queryDef, queryJoinDef, tableRecordJoin, } from "../types";
+import { baseObj, joinConnObj, queryDef, queryJoinDef, tableRecordJoin, } from "../types";
 import { joinFreq } from "../constants";
 
 function isPlural(conn?: joinConnObj) {
@@ -89,12 +89,18 @@ function isPlural(conn?: joinConnObj) {
     }
   }
 
-  _fromBase() {
+  get baseJoinDef() {
     if (!this.base.joins.hasKey(this.joinName)) {
-      console.error('cannot find ', this.joinName, 'in base', this.base.joins.store);
-      throw new Error(`TableRecordJoin._fromBase join - bad join name ${  this.joinName}`);
+      return undefined;
     }
-    const def: joinDefObj = this.base.joins.get(this.joinName);
+    return this.base.joins.get(this.joinName);
+  }
+
+  _fromBase() {
+    const def = this.baseJoinDef;
+    if (!def) {
+      throw new Error('cannot find baseJoinDef');
+    }
     if (def?.from?.tableName === this.tableName) {
       this.localConn = def.from;
       this.foreignConn = def.to;

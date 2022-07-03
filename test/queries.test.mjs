@@ -10,6 +10,7 @@ import simpleHome from './../testExpect/simpleHome.json' assert { type: 'json' }
 import singleRecordGet from './../testExpect/singleRecord.json' assert { type: 'json' };
 import stateRS from './../testExpect/states.json' assert { type: 'json' };
 import deepStateRS from './../testExpect/deepStates.json' assert { type: 'json' };
+import userHats from './../testExpect/joinedHats.json' assert { type: 'json' };
 
 const { joinFreq, binaryOperator } = constants;
 
@@ -143,7 +144,6 @@ tap.test('queries', (suite) => {
         field: 'name', test: binaryOperator.eq, against: 'Dave Clark'
       }
     });
-    console.log('dave is ', dave);
 
     const [whiteHat] = ctx.query({
       tableName: 'hats',
@@ -151,10 +151,26 @@ tap.test('queries', (suite) => {
         field: 'name', test: binaryOperator.eq, against: 'white hat'
       }
     });
-    console.log('white hat is ', whiteHat);
 
-   // ctx.table('users').join(map, 'userHats');
+    ctx.table('users').join(new Map([[dave, whiteHat]]), 'userHats');
 
+    // console.log('userHats is now ', ctx.table('user_hats').data.items);
+
+    const joined = ctx.table('users').query({
+      tableName: 'users',
+      joins: [
+        {
+          joinName: 'userHats'
+        }
+      ]
+    });
+
+/*
+    console.log('==================== Joined Hats:', JSON.stringify(joined)
+      .replace(/\{/g, "\n{")
+    );*/
+
+    m2m.same(joined, userHats);
     m2m.end();
   })
 

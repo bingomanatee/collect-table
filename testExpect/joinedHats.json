@@ -1,0 +1,81 @@
+[
+  {
+    "tableName": "users",
+    "key": 1,
+    "data": {
+      "name": "Bill Smith",
+      "email": "bill@google.com",
+      "age": 25,
+      "gender": "m",
+      "addID": 1
+    },
+    "joins": {
+      "userHats": []
+    }
+  },
+  {
+    "tableName": "users",
+    "key": 2,
+    "data": {
+      "name": "Sal Jones",
+      "email": "sal@yahoo.com",
+      "age": 40,
+      "gender": "f",
+      "addID": 3
+    },
+    "joins": {
+      "userHats": []
+    }
+  },
+  {
+    "tableName": "users",
+    "key": 3,
+    "data": {
+      "name": "Dave Clark",
+      "email": "nosferatu@transylvania.com",
+      "age": 60,
+      "gender": "m"
+    },
+    "joins": {
+      "userHats": [
+        {
+          "tableName": "hats",
+          "key": 3463327,
+          "data": {
+            "name": "white hat",
+            "sku": 3463327,
+            "cost": 200
+          }
+        }
+      ]
+    }
+  },
+  {
+    "tableName": "users",
+    "key": 4,
+    "data": {
+      "name": "Ellen Fisk",
+      "email": "ellen@yahoo.com",
+      "age": 27,
+      "gender": "f",
+      "addID": 2
+    },
+    "joins": {
+      "userHats": []
+    }
+  },
+  {
+    "tableName": "users",
+    "key": 5,
+    "data": {
+      "name": "Bob NoState",
+      "email": "bob@yahoo.com",
+      "age": 74,
+      "gender": "m",
+      "addID": 4
+    },
+    "joins": {
+      "userHats": []
+    }
+  }
+]
