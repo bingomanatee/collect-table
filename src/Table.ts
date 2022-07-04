@@ -378,8 +378,7 @@ export class Table extends EventEmitter implements tableObj {
     } else if (foreignConn.key) {
       foreignRecord.setField(foreignConn.key, localKey);
     } else {
-      console.log('m2m??? baseJoinDef: ', baseJoinDef);
-      throw new Error('many-to-many not implemented');
+      throw new Error('need a foreign key in one of the join terms OR a joinTableName for many-many joins');
     }
 
   }
