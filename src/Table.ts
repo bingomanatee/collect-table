@@ -149,7 +149,7 @@ export class Table extends EventEmitter implements tableObj {
   transact(action: (base: baseObj) => any, onError?: (err: any) => any) {
     try {
       const out = this.base.transact(action);
-      if (out.error) {
+      if (out?.error) {
         throw out.error;
       }
       return out;
