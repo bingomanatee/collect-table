@@ -139,23 +139,27 @@ declare type baseObj = {
     stream: (query: queryDef, listener: any) => any;
 } & EventEmitter;
 declare type tableObj = {
-    name: string;
-    data: mapCollection;
+    add: (data: any, meta?: any) => any;
     addMany: (records: any[]) => any[];
-    hasKey: (key: any) => boolean;
-    addData: (data: any, meta?: any) => any;
-    getData: (key: any) => any | undefined;
-    recordForKey: (key: any, meta?: tableRecordMetaObj) => recordObj;
     base: baseObj;
-    restore: (store: anyMap) => tableObj;
+    createData: (fromData?: any, meta?: any) => any;
+    data: mapCollection;
+    getData: (key: any) => any | undefined;
+    hasKey: (key: any) => boolean;
+    join: (keyMap: anyMap, joinName: string) => void;
+    keyField?: string;
+    name: string;
     query: (query: queryDef) => recordObj[];
     queryEach: (query: queryDef, action: queryEachFn) => void;
-    setMany: (keys: any, field: any, value: any) => void;
-    stream: (query: queryDef, listener: any) => any;
-    removeKey: (key: any) => void;
+    recordForKey: (key: any, meta?: tableRecordMetaObj) => recordObj;
     removeItem: (item: any) => void;
+    removeKey: (key: any) => void;
     removeQuery: (query: stringObj) => void;
-    join: (keyMap: anyMap, joinName: string) => void;
+    restore: (store: anyMap) => tableObj;
+    setField: (key: any, field: any, value: any) => void;
+    set: (key: any, data: any) => recordObj;
+    setManyFields: (keys: any, field: any, value: any) => void;
+    stream: (query: queryDef, listener: any) => any;
 } & EventEmitter;
 declare type changeObj = {
     time: number;

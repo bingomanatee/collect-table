@@ -34,10 +34,10 @@ tap.test('CollectionTable', (ct) => {
         recordCreator: userCreator
       });
 
-      const { data } = users.addData({ name: 'Bob Smith', email: 'bob@foo.com', junk: 'not included' });
+      const { data } = users.add({ name: 'Bob Smith', email: 'bob@foo.com', junk: 'not included' });
       rcTest.same(data, { name: 'Bob Smith', email: 'bob@foo.com' });
       rcTest.throws(() => {
-        users.addData({ name: 'Sam', email: 'sam@google.com' }); // name too short
+        users.add({ name: 'Sam', email: 'sam@google.com' }); // name too short
       }, /no\/bad name/)
       rcTest.end();
     })
@@ -45,16 +45,16 @@ tap.test('CollectionTable', (ct) => {
     conTest.end();
   });
 
-  ct.test('get/addData', (keyTest) => {
+  ct.test('get/add', (keyTest) => {
     keyTest.test('should create, get record value', (indexTest) => {
       const ctx = createContext();
       const userTable = ctx.table('users');
 
-      const { key } = userTable.addData({ name: 'Bob', role: 'admin' });
-      const record = userTable.getData(key);
+      const { key } = userTable.add({ name: 'Bob', role: 'admin' });
+      const data = userTable.getData(key);
 
-      indexTest.same(record.name, 'Bob');
-      indexTest.same(record.role, 'admin');
+      indexTest.same(data.name, 'Bob');
+      indexTest.same(data.role, 'admin');
       indexTest.end();
     });
     keyTest.end();

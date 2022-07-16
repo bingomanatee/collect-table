@@ -39,12 +39,6 @@ const KeyProviders = {
 };
 
 export class Table extends EventEmitter implements tableObj {
-  public base: baseObj;
-
-  name: string;
-
-  protected dataCreator: dataCreatorFn | undefined;
-
   constructor(
     base: baseObj,
     name: string,
@@ -55,14 +49,22 @@ export class Table extends EventEmitter implements tableObj {
     this.name = name;
     this._data = create(new Map([]));
     this.addOptions(options);
-
   }
+
+  public base: baseObj;
+
+  name: string;
+
+  keyField?: any;
+
+  protected dataCreator: dataCreatorFn | undefined;
 
   protected addOptions(options?: tableOptionsObj) {
     if (options?.keyProvider) {
       this.keyProvider = options?.keyProvider;
     }
     if (options && 'key' in options) {
+      this.keyField = options.key;
       this.keyProvider = (item) => create(item).get(options.key);
     }
     if (options?.recordCreator) {
@@ -109,7 +111,7 @@ export class Table extends EventEmitter implements tableObj {
       () => {
         data.forEach((item) => {
           // @ts-ignore
-          const tableRecord = Array.isArray(item) ? this.addData(...item) : this.addData(item);
+          const tableRecord = Array.isArray(item) ? this.add(...item) : this.add(item);
           result.set(tableRecord.key, tableRecord.data);
         });
         return { result };
@@ -126,21 +128,29 @@ export class Table extends EventEmitter implements tableObj {
   }
 
   /**
-   * the "put" method. key can be explicit
+   * the "put" method. key can be explicitly specified in `meta.key`
+   * or derived from the keyField.
+   *
+   * This is an "upsert" type function - may replace existing.
+   *
    * @param data {any} the value (or seed) for the item
    * @param meta {addDataMetaObj} any other values that the key/data factories need
    *
    */
-  public addData(data: any, meta?: addDataMetaObj): recordObj {
-    const preparedData = this.newData(data, meta);
+  public add(data: any, meta?: addDataMetaObj): recordObj {
+    const preparedData = this.createData(data, meta);
 
     // if meta doesn't contain key, generate an auto-key from the keyProvider.
     const key = this.makeDataKey(preparedData, meta);
 
+    return this.set(key, preparedData);
+  }
+
+  public set(key, data): recordObj {
     const previous = this.data.get(key);
-    this.emit('addData:before', preparedData, key, previous);
-    this.data.set(key, preparedData);
-    this.emit('addData:after', preparedData, key, previous);
+    this.emit('add:before', data, key, previous);
+    this.data.set(key, data);
+    this.emit('add:after', data, key, previous);
     return this.recordForKey(key);
   }
 
@@ -168,16 +178,19 @@ export class Table extends EventEmitter implements tableObj {
     });
   }
 
-  set(key, field, value) {
-    this.recordForKey(key).setField(field, value);
+  setField(key, field, value) {
+    const record = this.recordForKey(key);
+    if (record.exists) {
+      record.setField(field, value);
+    }
   }
 
-  setMany(keys, field, value) {
+  setManyFields(keys, field, value) {
     this.transact(() => {
       let coll = keys;
       if (typeof keys === "function") {
-        this.data.cloneShallow.filter(keys).forEach((_i, iKey) => {
-          this.recordForKey(iKey).setField(field, value);
+        this.data.cloneShallow.filter(keys).keys.forEach((iKey) => {
+          this.setField(iKey, field, value);
         });
 
       } else {
@@ -236,11 +249,11 @@ export class Table extends EventEmitter implements tableObj {
     return this.data.get(key);
   }
 
-  protected newData(record: any, meta?: any) {
-    let recordInstance = record;
+  public createData(fromData?: any, meta?: any) {
+    let recordInstance = fromData;
 
     if (this.dataCreator) {
-      recordInstance = this.dataCreator(this, record, meta);
+      recordInstance = this.dataCreator(this, fromData, meta);
     }
     return recordInstance;
   }
@@ -256,7 +269,7 @@ export class Table extends EventEmitter implements tableObj {
       key = this.keyProvider(recordInstance, this, meta);
     } else {
       this.emit('error', {
-        action: 'newData',
+        action: 'createData',
         input: [recordInstance, meta]
       })
       throw e('cannot make a tableName record without a key or keyProvider', {
@@ -361,7 +374,7 @@ export class Table extends EventEmitter implements tableObj {
       });
 
       if (!existing.length){
-        joinTable.addData({
+        joinTable.add({
           [localJoinField]: localKey,
           [foreignJoinField]: foreignKey
         });

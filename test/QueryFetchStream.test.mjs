@@ -41,7 +41,7 @@ tap.test('DataSet', (suite) => {
     fs.same(hits, qfs_result_stream.slice(0, 1));
 
     ctx.transact(() => {
-      ctx.table('addr').addData(
+      ctx.table('addr').add(
         {
           id: 6,
           addr: '111 Market',
@@ -49,7 +49,7 @@ tap.test('DataSet', (suite) => {
           state: 'CA'
         }
       )
-      ctx.table('users').addData(
+      ctx.table('users').add(
         {name: 'Newby Newface', email: 'newby@google.com', addID: 6});
     })
 
