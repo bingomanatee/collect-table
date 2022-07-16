@@ -62,7 +62,7 @@ declare type tableRecordJoin = {
 declare type tableOptionsObj = {
     keyProvider?: keyProviderFn;
     key?: any;
-    recordCreator?: dataCreatorFn;
+    dataCreator?: dataCreatorFn;
     data?: any[];
 };
 declare type tableDefObj = {
@@ -80,7 +80,7 @@ declare type stringObj = {
     [key: string]: any;
 };
 declare type innerBinaryFn = (recordTerm: any, recordAgainst: any, record: recordObj, term: binaryTestObj) => boolean;
-declare type dataCreatorFn = (table: tableObj, data: any, key?: any) => any;
+declare type dataCreatorFn = (table: tableObj, data: any, meta?: any) => any;
 declare type keyProviderFn = (target: any, table: tableObj, meta?: any) => any[];
 declare type recordFn = (tableRecordObj: any) => any;
 declare type recordTestFn = (tableRecordObj: any) => boolean;

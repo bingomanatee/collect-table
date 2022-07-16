@@ -41,7 +41,7 @@ export type tableRecordJoin = {
 export type tableOptionsObj = {
   keyProvider?: keyProviderFn;
   key?: any;
-  recordCreator?: dataCreatorFn;
+  dataCreator?: dataCreatorFn;
   data?: any[];
 };
 export type tableDefObj = {
@@ -58,7 +58,7 @@ export type stringObj = { [key: string]: any };
 // -------------- functions
 
 export type innerBinaryFn = (recordTerm: any, recordAgainst: any, record: recordObj, term: binaryTestObj) => boolean;
-export type dataCreatorFn = (table: tableObj, data: any, key?: any) => any;
+export type dataCreatorFn = (table: tableObj, data: any, meta?: any) => any;
 export type keyProviderFn = (target: any, table: tableObj, meta?: any) => any[];
 
 export type recordFn = (tableRecordObj) => any;

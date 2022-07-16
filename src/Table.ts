@@ -67,8 +67,8 @@ export class Table extends EventEmitter implements tableObj {
       this.keyField = options.key;
       this.keyProvider = (item) => create(item).get(options.key);
     }
-    if (options?.recordCreator) {
-      this.dataCreator = options?.recordCreator;
+    if (options?.dataCreator) {
+      this.dataCreator = options?.dataCreator;
     }
     if (options?.data) {
       this.addMany(options?.data);
@@ -250,16 +250,13 @@ export class Table extends EventEmitter implements tableObj {
   }
 
   public createData(fromData?: any, meta?: any) {
-    let recordInstance = fromData;
-
     if (this.dataCreator) {
-      recordInstance = this.dataCreator(this, fromData, meta);
+      return this.dataCreator(this, fromData, meta);
     }
-    return recordInstance;
+    return fromData;
   }
 
   protected makeDataKey(recordInstance, meta) {
-
     const metaHasKey = meta && (typeof meta === 'object') && ('key' in meta);
     let key: any;
 

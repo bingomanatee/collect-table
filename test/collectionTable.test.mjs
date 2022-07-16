@@ -31,7 +31,7 @@ tap.test('CollectionTable', (ct) => {
     conTest.test('recordCreator', (rcTest) => {
       const ctx = createContext();
       const users = ctx.table('users', {
-        recordCreator: userCreator
+        dataCreator: userCreator
       });
 
       const { data } = users.add({ name: 'Bob Smith', email: 'bob@foo.com', junk: 'not included' });
@@ -86,7 +86,7 @@ tap.test('CollectionTable', (ct) => {
     amTest.test('with bad data', (badTest) => {
       const ctx = createContext();
       const users = ctx.table('users', {
-        recordCreator: userCreator,
+        dataCreator: userCreator,
         data: [
           userCreator({}, {name: 'Rick Steve', email: 'rick@yahoo.com'}),
           userCreator({}, {name: 'Peter Parker', email: 'pparker@nyu.com'}),
