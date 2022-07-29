@@ -38,6 +38,16 @@ const KeyProviders = {
   },
 };
 
+function arrayOfKeys(a) {
+  if (!Array.isArray(a)) {
+    return arrayOfKeys([a]);
+  }
+  return a.map((r) => {
+    const ir = isTableRecord(r, true);
+    return ir ? r.key : r
+  });
+}
+
 export class Table extends EventEmitter implements tableObj {
   constructor(
     base: baseObj,
@@ -171,6 +181,10 @@ export class Table extends EventEmitter implements tableObj {
     }
   }
 
+  public get records() {
+    return this.data.keys.map(key => new Record(this.base, this.name, key))
+  }
+
   public queryEach(query, action) {
     this.transact(() => {
       const records = this.query(query);
@@ -279,9 +293,8 @@ export class Table extends EventEmitter implements tableObj {
   // -------------------------- query
 
   query(query: queryDef): recordObj[] {
-    if (query.tableName !== this.name)
-    {
-      console.log('table.query: badly targeted query, wrong tablename; ',query, 'should be ', this.name);
+    if (query.tableName !== this.name) {
+      console.log('table.query: badly targeted query, wrong tablename; ', query, 'should be ', this.name);
       throw new Error(`table.query: badly targeted query, wrong tablename, not "${this.name}"; `);
     }
 
@@ -339,9 +352,15 @@ export class Table extends EventEmitter implements tableObj {
 
     if (!(localConn &&
       foreignConn &&
-      record.exists && foreignTableName && this.base.hasTable(foreignTableName))) {
+      record.exists &&
+      foreignTableName &&
+      this.base.hasTable(foreignTableName))) {
+      console.log('not joining lk:', localKey, 'fk:', foreignKey, 'ftn:', foreignTableName);
+      console.log('conns:', localConn, foreignConn);
+      console.log('record:', record);
       return;
     }
+
     const foreignRecord = this.base.table(foreignTableName).recordForKey(foreignKey);
     if (!(foreignRecord.exists)) {
       return;
@@ -370,7 +389,7 @@ export class Table extends EventEmitter implements tableObj {
         }
       });
 
-      if (!existing.length){
+      if (!existing.length) {
         joinTable.add({
           [localJoinField]: localKey,
           [foreignJoinField]: foreignKey
@@ -394,12 +413,3 @@ export class Table extends EventEmitter implements tableObj {
   }
 }
 
-function arrayOfKeys(a) {
-  if (!Array.isArray(a)) {
-    return arrayOfKeys([a]);
-  }
-  return a.map((r) => {
-    const ir = isTableRecord(r);
-    return ir ? r.key : r
-  });
-}

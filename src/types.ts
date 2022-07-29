@@ -183,6 +183,7 @@ export type tableRecordValueObj = {
 export type recordObj = {
   data: any;
   tableName: string;
+  collection: collectionObj<any, any, any>;
   key: any;
   table: tableObj;
   base: baseObj;

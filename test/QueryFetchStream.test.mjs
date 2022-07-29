@@ -36,7 +36,7 @@ tap.test('DataSet', (suite) => {
       });
 
     const hits = [];
-    stream.subscribe((data) => hits.push(create(data).items));
+    stream.subscribe((data) => hits.push(create(data).items.map(r => r.value)));
 
     fs.same(hits, qfs_result_stream.slice(0, 1));
 

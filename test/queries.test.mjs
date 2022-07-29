@@ -3,6 +3,7 @@ import tap from 'tap';
 import pkg from '../dist/index.js';
 import makeContext from "../testHelpers/makeContext.mjs";
 import linkableContext from '../testHelpers/linkableContent.mjs';
+import petsAndOwners from '../testHelpers/pets_and_owners.mjs';
 
 const { default: createContext, constants } = pkg;
 import deepHome from './../testExpect/deepHome.json' assert { type: 'json' };
@@ -11,6 +12,7 @@ import singleRecordGet from './../testExpect/singleRecord.json' assert { type: '
 import stateRS from './../testExpect/states.json' assert { type: 'json' };
 import deepStateRS from './../testExpect/deepStates.json' assert { type: 'json' };
 import userHats from './../testExpect/joinedHats.json' assert { type: 'json' };
+import * as fs from "fs";
 
 const { joinFreq, binaryOperator } = constants;
 
@@ -25,7 +27,7 @@ tap.test('queries', (suite) => {
         test: binaryOperator.eq,
         against: 'Bill Smith'
       }
-    });
+    }).map(r => r.value);
 
 
     eqTest.same(records.length, 1);
@@ -62,7 +64,7 @@ tap.test('queries', (suite) => {
           joinName: 'home',
         }
       ]
-    });
+    }).map(r => r.value);
     /*
             console.log('==================== simple home query:', JSON.stringify(records)
               .replace(/\{/g, "\n{")
@@ -86,7 +88,7 @@ tap.test('queries', (suite) => {
           ]
         }
       ]
-    });
+    }).map(r => r.value);
 
 
     /*    console.log('==================== DEEP home query:', JSON.stringify(records)
@@ -106,7 +108,7 @@ tap.test('queries', (suite) => {
       joins: [
         { joinName: 'stateInfo' }
       ]
-    });
+    }).map(r => r.value);;
     // console.log('==================== state query:', JSON.stringify(records)
     //   .replace(/\{/g, "\n{")
     // );
@@ -125,36 +127,49 @@ tap.test('queries', (suite) => {
       joins: [
         { joinName: 'stateInfo', joins: [{ joinName: 'home' }] }
       ]
-    });
-    /*   console.log('==================== state query DEEP:', JSON.stringify(records)
-         .replace(/\{/g, "\n{")
-       );*/
+    }).map(r => r.value)
 
     tmDeep.same(records, deepStateRS);
 
     tmDeep.end();
   });
 
-  suite.test('m2m joins', (m2m) => {
+  suite.test('fk joins - large data set', (lds) => {
+    const base = petsAndOwners(createContext, joinFreq);
 
+    const start = Date.now();
+    const owners = base.query({
+      tableName: 'people',
+      joins: [
+        {
+          joinName: 'owned pets'
+        }
+      ]
+    })
+    console.log('large query took', Date.now() - start, 'ms');
+    console.log('owners:', owners.length, 'lines');
+    console.log('people:', base.table('people').data.size, 'records');
+    console.log('pets:', base.table('pets').data.size, 'records');
+    lds.end();
+  });
+
+  suite.test('m2m joins', (m2m) => {
     const ctx = linkableContext(createContext, joinFreq);
     const [dave] = ctx.query({
       tableName: 'users',
       where: {
         field: 'name', test: binaryOperator.eq, against: 'Dave Clark'
       }
-    });
+    })
 
     const [whiteHat] = ctx.query({
       tableName: 'hats',
       where: {
         field: 'name', test: binaryOperator.eq, against: 'white hat'
       }
-    });
+    })
 
     ctx.table('users').join(new Map([[dave, whiteHat]]), 'userHats');
-
-    // console.log('userHats is now ', ctx.table('user_hats').data.items);
 
     const joined = ctx.table('users').query({
       tableName: 'users',
@@ -163,10 +178,12 @@ tap.test('queries', (suite) => {
           joinName: 'userHats'
         }
       ]
-    });
+    }).map(r => r.value)
 
-/*
-    console.log('==================== Joined Hats:', JSON.stringify(joined)
+    /*console.log('==================== Joined Hats:', JSON.stringify(joined)
+      .replace(/\{/g, "\n{")
+    );
+    console.log('==================== FOUND Joined Hats:', JSON.stringify(userHats)
       .replace(/\{/g, "\n{")
     );*/
 

@@ -1,8 +1,9 @@
-import create from '@wonderlandlabs/collect';
+import { create } from '@wonderlandlabs/collect';
 import { baseObj, queryDef, recordObj, recordSetCollection } from "../types";
 import TableRecordJoin from "./TableRecordJoin";
 import whereFn from "./whereFn";
-import { binaryOperator } from "../constants";
+import { emitterMap } from "./emitterMap";
+import { getRecordField } from "./getRecordField";
 
 export class QueryResultSet {
   private query: queryDef;
@@ -27,7 +28,7 @@ export class QueryResultSet {
     const { table, query } = this;
     let records: recordSetCollection;
     if (query.key) {
-      records = table.data.cloneEmpty();
+      records = create(new Map());
       const record = table.recordForKey(query.key);
       if (record) {
         records.set(record.key, record);
@@ -42,93 +43,107 @@ export class QueryResultSet {
     }
 
     query.joins?.forEach((joinDef) => {
-      const localCache = new Map();
       const helper = new TableRecordJoin(this.base, joinDef, query);
 
       if (helper.localConn && helper.foreignConn) {
-        const { baseJoinDef, localConn, foreignConn } = helper;
-        const localKeyName = localConn.key;
-        const foreignKeyName = foreignConn.key;
-        const foreignTableName = foreignConn.tableName;
-        const localTableName = localConn.tableName;
-        const {joinTableName} = baseJoinDef;
+        const { baseJoinDef, localConn, foreignConn, attachKey } = helper;
+        const { key: localKeyName, tableName: localTableName } = localConn;
+        const { key: foreignKeyName, tableName: foreignTableName } = foreignConn;
+        const { joinTableName } = baseJoinDef;
         const joinLocalKeyName = localConn.joinTableField || localTableName;
         const joinForeignKeyName = foreignConn.joinTableField || foreignTableName;
 
         if (!this.base.hasTable(foreignTableName)) {
+          console.warn('cannot find join table ', foreignTableName)
           return;
         }
 
         let joinTable;
         if (joinTableName) {
           if (!this.base.hasTable(joinTableName)) {
+            console.warn('cannot find joinTableName table ', joinTableName)
             return;
           }
           joinTable = this.base.table(joinTableName);
         }
 
-        records.forEach((record: recordObj, key) => {
+        const foreignQuery = {
+          tableName: foreignTableName,
+          where: joinDef.where,
+          joins: joinDef.joins
+        };
 
-          let localKey = key;
-          if (localKeyName) {
-            localKey = record.get(localKeyName);
-          }
-          if (localKeyName && localCache.has(localKey)) {
-            record.addJoin(helper.attachKey, localCache.get(localKey));
-          } else if (joinTableName) {
-            const joinFTQuery = {
-              tableName: joinTableName,
-              where: {
-                field: joinLocalKeyName,
-                test: binaryOperator.eq,
-                against: localKey
-              }
-            };
+        const foreignRecords = this.base.table(foreignTableName).query(foreignQuery);
 
-            const joinRecords = joinTable.query(joinFTQuery);
-            const foreignKeys = joinRecords.map((jr: recordObj) => create(jr.data).get(joinForeignKeyName));
+        let matchMap;
 
-            const match = new QueryResultSet(this.base, {
-              tableName: foreignTableName,
-              where: (fr) => foreignKeys.includes(fr.key),
-              joins: joinDef.joins
-            }).records;
-            if (localKeyName) {
-              localCache.set(localKey, match);
-            }
-            record.addJoin(helper.attachKey, match);
-          } else {
-            // default - match the local value to the foreign reords' key
-            let where = (foreignRecord) => foreignRecord.key === localKey;
-
-            if (foreignKeyName) { // alternate -- match to a specific  field
-              where = (foreignRecord) => foreignRecord.get(foreignKeyName) === localKey;
-            }
-
-            const matchingCollection = new QueryResultSet(this.base, {
-              tableName: foreignTableName,
-              where,
-              joins: joinDef.joins
+        if (joinTableName) {
+          const matchesByKey = emitterMap(foreignRecords, (ms, addKey) => {
+            ms.forEach(record => {
+              addKey(record.key, record)
             });
-
-            let match = matchingCollection.records;
-
-            // console.log('from ', record.tableName, ' join ', helper.localConn, 'to', helper.foreignConn, 'plural is ', helper.foreignIsPlural,);
-            if (!helper.foreignIsPlural) {
-              match = (match && (match.length > 0)) ? match[0] : null;
+          });
+          matchMap = emitterMap(joinTable.records, (joinRecords, addKey) => {
+            joinRecords.forEach((record) => {
+              const localJoinKey = getRecordField(record, joinLocalKeyName);
+              const foreignJoinKey = getRecordField(record, joinForeignKeyName);
+              if (localJoinKey === undefined || foreignJoinKey === undefined) {
+                return;
+              }
+              const matchedRecord = matchesByKey.get(foreignJoinKey);
+              if (!matchedRecord) {
+                // console.log('cannot find ', foreignJoinKey, 'in', matchesByKey.store);
+              } else {
+                addKey(localJoinKey, matchedRecord);
+              }
+            });
+          });
+          matchMap.map((data) => data.reduce((list, item) => {
+            if (Array.isArray(item)) {
+              return list.concat(item);
             }
-            if (localKeyName) {
-              localCache.set(localKey, match);
+            return [...list, item];
+          }, []))
+        } else {
+          matchMap = emitterMap(foreignRecords, (matchRecords, addKey) => {
+            matchRecords.forEach((matchedRecord) => {
+
+              const key = foreignKeyName ? getRecordField(matchedRecord, foreignKeyName) : matchedRecord.key;
+              try {
+                if (key !== undefined) {
+                  addKey(key, matchedRecord);
+                }
+              } catch (err) {
+                // @ts-ignore
+                console.log('---------------error in matching', err.message);
+                console.log('record', matchedRecord, 'q', query, joinDef, 'mr', matchRecords);
+              }
+            });
+          });
+        }
+
+        records.forEach((record: recordObj) => {
+          const localKey = localKeyName ? record.get(localKeyName) : record.key;
+          if (localKey === undefined) {
+            return;
+          }
+
+          if (matchMap.hasKey(localKey)) {
+            let result = matchMap.get(localKey);
+            if (result.length === 0) {
+              return;
             }
-            record.addJoin(helper.attachKey, match);
+            if (!joinTableName && !foreignKeyName && Array.isArray(result) && result.length === 1) {
+              result = result[0];
+            }
+            record.addJoin(attachKey, result);
           }
         });
       }
     });
 
-    return records.cloneShallow().map((r) => r.value).items
+    return records.items
   }
-
 
 }
 

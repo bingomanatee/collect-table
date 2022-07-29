@@ -70,9 +70,6 @@
       "data": {
         "name": "Dave Clark",
         "email": "nosferatu@transylvania.com"
-      },
-      "joins": {
-        "home_addr": null
       }
     },
     {
@@ -123,9 +120,6 @@
             "id": 4,
             "addr": "100 noState Lane",
             "postcode": 123213
-          },
-          "joins": {
-            "state_detail": null
           }
         }
       }
@@ -202,9 +196,6 @@
       "data": {
         "name": "Dave Clark",
         "email": "nosferatu@transylvania.com"
-      },
-      "joins": {
-        "home_addr": null
       }
     },
     {
@@ -255,9 +246,6 @@
             "id": 4,
             "addr": "100 noState Lane",
             "postcode": 123213
-          },
-          "joins": {
-            "state_detail": null
           }
         }
       }

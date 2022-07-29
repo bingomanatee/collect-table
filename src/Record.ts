@@ -1,9 +1,10 @@
 import { enums, create } from '@wonderlandlabs/collect';
+import { collectionObj } from "@wonderlandlabs/collect/types/types";
 import {
   baseObj, mapCollection,
   recordObj, tableRecordValueObj
 } from "./types";
-import { isCollection } from './typeGuards';
+import { isCollection, isTableRecord } from './typeGuards';
 
 const { FormEnum } = enums;
 
@@ -65,29 +66,23 @@ export default class Record implements recordObj {
     if (!this.exists) {
       return undefined;
     }
-    const { coll } = this;
-    if (coll.form === FormEnum.scalar) {
+    if (this.form === FormEnum.scalar) {
       console.warn('attempt to get a field', field,
         'from scalar', this);
       return undefined;
     }
-    return coll.get(field);
-  }
-
-  private get coll() {
-    const { data } = this;
-    return !isCollection(data) ? create(data) : data;
+    return this.collection.get(field);
   }
 
   setField(field, value) {
-    const { coll } = this;
-    if (coll.form === FormEnum.scalar) {
+    if (this.form === FormEnum.scalar) {
       return;
     }
     if (typeof value === 'function') {
-      coll.set(field, value(this.data, this.key));
+      this.collection.set(field, value(this.data, this.key));
+    } else {
+      this.collection(field, value);
     }
-    coll.set(field, value);
   }
 
   get exists() {
@@ -104,35 +99,53 @@ export default class Record implements recordObj {
       key: this.key,
       data: this.data,
     }
-    if (this.notes?.hasKey('joins')) {
+    if (this._joins) {
       out.joins = this.joinObj;
     }
     return out;
   }
 
+  _joins?: mapCollection;
+
   /**
    * returns joins flattened into an object -- or undefined/
    */
   protected get joinObj() {
-    const joins = this.notes?.get('joins');
+    const joins = this._joins;
     if (!joins) {
       return undefined;
     }
     return joins.reduce((m, records, name) => {
+      let joinValues = records;
+      if (isTableRecord(joinValues)) {
+        joinValues = records.value;
+      } else if (Array.isArray(joinValues)) {
+        joinValues = joinValues.map((r) => {
+          if (isTableRecord(r)) {
+            return r.value;
+          }
+          return r;
+        })
+      }
       if (m) {
         // eslint-disable-next-line no-param-reassign
-        m[name] = records;
+        m[name] = joinValues;
         return m;
       }
-      return {[name]: records};
+      return { [name]: joinValues };
     }, undefined);
   }
+
+  private _collection?: collectionObj<any, any, any>
 
   get collection() {
     if (isCollection(this.data)) {
       return this.data;
     }
-    return create(this.data);
+    if (!this._collection || this._collection.store !== this.data) {
+      this._collection = create(this.data);
+    }
+    return this._collection;
   }
 
   get form() {
@@ -145,13 +158,11 @@ export default class Record implements recordObj {
    * @param items one/several related records
    */
   public addJoin(key: any, items: recordObj | recordObj[] | null) {
-    if (!this.notes) {
-      this.notes = create(new Map());
+    if (!this._joins) {
+      this._joins = create(new Map());
     }
-    if (!this.notes.hasKey('joins')) {
-      this.notes.set('joins', create(new Map()));
-    }
-    this.notes.get('joins').set(key, items);
+
+    this._joins.set(key, items);
   }
 
   delete() {

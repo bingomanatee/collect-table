@@ -19,15 +19,17 @@
             "postcode": 12345
           },
           "joins": {
-            "home": {
-              "tableName": "users",
-              "key": 1,
-              "data": {
-                "name": "Bill Smith",
-                "email": "bill@google.com",
-                "addID": 1
+            "home": [
+              {
+                "tableName": "users",
+                "key": 1,
+                "data": {
+                  "name": "Bill Smith",
+                  "email": "bill@google.com",
+                  "addID": 1
+                }
               }
-            }
+            ]
           }
         },
         {
@@ -41,15 +43,17 @@
             "postcode": 40443
           },
           "joins": {
-            "home": {
-              "tableName": "users",
-              "key": 4,
-              "data": {
-                "name": "Ellen Fisk",
-                "email": "ellen@yahoo.com",
-                "addID": 2
+            "home": [
+              {
+                "tableName": "users",
+                "key": 4,
+                "data": {
+                  "name": "Ellen Fisk",
+                  "email": "ellen@yahoo.com",
+                  "addID": 2
+                }
               }
-            }
+            ]
           }
         }
       ]
@@ -75,15 +79,17 @@
             "postcode": 72332
           },
           "joins": {
-            "home": {
-              "tableName": "users",
-              "key": 2,
-              "data": {
-                "name": "Sal Jones",
-                "email": "sal@yahoo.com",
-                "addID": 3
+            "home": [
+              {
+                "tableName": "users",
+                "key": 2,
+                "data": {
+                  "name": "Sal Jones",
+                  "email": "sal@yahoo.com",
+                  "addID": 3
+                }
               }
-            }
+            ]
           }
         }
       ]
@@ -106,9 +112,6 @@
             "addr": "50 nobodyLivesHere Lane",
             "postcode": 112345,
             "state": "KY"
-          },
-          "joins": {
-            "home": null
           }
         }
       ]

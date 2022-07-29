@@ -1,5 +1,5 @@
 {
-  "version": "0.1.4",
+  "version": "0.1.5",
   "license": "MIT",
   "source": "src/index.ts",
   "main": "dist/index.js",
@@ -54,6 +54,7 @@
     "eslint-plugin-react-hooks": "^4.3.0",
     "install-peers": "^1.0.4",
     "install-peers-cli": "^2.2.0",
+    "lodash": "^4.17.21",
     "lodash-es": "^4.17.21",
     "prettier": "2.6.2",
     "rimraf": "^3.0.2",

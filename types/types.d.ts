@@ -183,6 +183,7 @@ declare type tableRecordValueObj = {
 declare type recordObj = {
     data: any;
     tableName: string;
+    collection: collectionObj<any, any, any>;
     key: any;
     table: tableObj;
     base: baseObj;

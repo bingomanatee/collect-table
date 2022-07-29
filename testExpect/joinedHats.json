@@ -8,10 +8,8 @@
       "age": 25,
       "gender": "m",
       "addID": 1
-    },
-    "joins": {
-      "userHats": []
     }
+
   },
   {
     "tableName": "users",
@@ -22,10 +20,8 @@
       "age": 40,
       "gender": "f",
       "addID": 3
-    },
-    "joins": {
-      "userHats": []
     }
+
   },
   {
     "tableName": "users",
@@ -59,10 +55,8 @@
       "age": 27,
       "gender": "f",
       "addID": 2
-    },
-    "joins": {
-      "userHats": []
     }
+
   },
   {
     "tableName": "users",
@@ -73,9 +67,6 @@
       "age": 74,
       "gender": "m",
       "addID": 4
-    },
-    "joins": {
-      "userHats": []
     }
   }
 ]
