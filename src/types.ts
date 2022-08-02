@@ -1,7 +1,7 @@
 /* eslint-disable no-use-before-define */
 import EventEmitter from 'emitix';
 import { collectionObj } from '@wonderlandlabs/collect';
-import { binaryOperator, booleanOperator, changePhases, joinFreq } from "./constants";
+import { binaryOperator, booleanOperator, changePhases } from './constants';
 
 // ------------- MICRO DEFS
 
@@ -95,7 +95,6 @@ export type whereUnionObj = {
 
 // this defines one "end" of a join - a pointer to the target, or the source.
 export type joinConnObj = {
-  frequency?: joinFreq;
   as?: string;
   tableName: string;
   key?: any;
@@ -103,6 +102,7 @@ export type joinConnObj = {
 }
 
 export type queryClauses = {
+  filter?: (collectionObj) => collectionObj;
   where?: whereTerm;
   joins?: queryJoinDef[];
 }
@@ -146,12 +146,13 @@ export type tableObj = {
   data: mapCollection;
   getData: (key: any) => any | undefined;
   hasKey: (key: any) => boolean;
-  join: (keyMap: anyMap , joinName: string) =>void;
+  join: (keyMap: anyMap, joinName: string) =>void;
   keyField?: string;
   name: string;
   query: (query: queryDef) => recordObj[];
   queryEach: (query: queryDef, action: queryEachFn) => void;
   recordForKey: (key: any, meta?: tableRecordMetaObj) => recordObj;
+  records: (keys?: any[]) => recordObj[];
   removeItem: (item: any) => void;
   removeKey: (key: any) => void;
   removeQuery: (query: stringObj) => void;
@@ -175,6 +176,7 @@ export type changeObj = {
 };
 
 export type tableRecordValueObj = {
+  id?: number,
   tableName: any,
   key: any,
   data: any,
@@ -191,6 +193,7 @@ export type recordObj = {
   setField: (field: any, value: any) => void;
   exists: boolean;
   value: tableRecordValueObj;
+  valueWithID: tableRecordValueObj;
   notes?: tableRecordNotesColl;
   addJoin: (key: any, item: any) => void;
   setNote: (field: any, value: any) => void;

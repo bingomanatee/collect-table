@@ -1,9 +1,9 @@
 import create, { utils } from '@wonderlandlabs/collect';
 import combinate from 'combinate';
 
-import EventEmitter from "emitix";
+import EventEmitter from 'emitix';
 
-import type { collectionObj } from "@wonderlandlabs/collect/types/types";
+import type { collectionObj } from '@wonderlandlabs/collect/types/types';
 import type {
   addDataMetaObj,
   anyMap,
@@ -16,12 +16,12 @@ import type {
   tableObj,
   tableOptionsObj, tableRecordJoin
 } from './types';
-import Record from "./Record";
-import { isCollection, isTableRecord } from "./typeGuards";
-import QueryFetchStream from "./helpers/QueryFetchStream";
-import QueryResultSet from "./helpers/QueryResultSet";
-import TableRecordJoin from "./helpers/TableRecordJoin";
-import { binaryOperator, booleanOperator } from "./constants";
+import Record from './Record';
+import { isCollection, isTableRecord } from './typeGuards';
+import QueryFetchStream from './helpers/QueryFetchStream';
+import QueryResultSet from './helpers/QueryResultSet';
+import TableRecordJoin from './helpers/TableRecordJoin';
+import { binaryOperator, booleanOperator } from './constants';
 
 const { e } = utils;
 
@@ -35,21 +35,21 @@ const KeyProviders = {
     const index = KeyProviders._baseCache.get(base);
     KeyProviders._baseCache.set(base, index + 1);
     return index;
-  },
+  }
 };
 
-function arrayOfKeys(a) {
+function arrayOfKeys (a) {
   if (!Array.isArray(a)) {
     return arrayOfKeys([a]);
   }
   return a.map((r) => {
     const ir = isTableRecord(r, true);
-    return ir ? r.key : r
+    return ir ? r.key : r;
   });
 }
 
 export class Table extends EventEmitter implements tableObj {
-  constructor(
+  constructor (
     base: baseObj,
     name: string,
     options?: tableOptionsObj
@@ -69,7 +69,7 @@ export class Table extends EventEmitter implements tableObj {
 
   protected dataCreator: dataCreatorFn | undefined;
 
-  protected addOptions(options?: tableOptionsObj) {
+  protected addOptions (options?: tableOptionsObj) {
     if (options?.keyProvider) {
       this.keyProvider = options?.keyProvider;
     }
@@ -93,29 +93,29 @@ export class Table extends EventEmitter implements tableObj {
    * redact data state to a transactional snapshot
    * @param store
    */
-  public restore(store: anyMap) {
+  public restore (store: anyMap) {
     this._data.withComp({ quiet: true }, () => {
       this._data.change(store);
     });
     return this;
   }
 
-  get data(): mapCollection {
+  get data (): mapCollection {
     if (this.base.lastChange && !this.base.lastChange.backupTables.hasKey(this.name)) {
       this.base.lastChange.saveTableBackup(this.name, new Map(this._data.store));
     }
     return this._data;
   }
 
-  set data(value: mapCollection) {
+  set data (value: mapCollection) {
     this._data = value;
   }
 
-  get size() {
+  get size () {
     return this.data.size;
   }
 
-  public addMany(data: Array<any | any[]>) {
+  public addMany (data: Array<any | any[]>) {
     const result = new Map();
     return this.transact(
       () => {
@@ -129,11 +129,11 @@ export class Table extends EventEmitter implements tableObj {
     );
   }
 
-  public hasKey(key) {
+  public hasKey (key) {
     return this.data.hasKey(key);
   }
 
-  public recordForKey(key) {
+  public recordForKey (key) {
     return new Record(this.base, this.name, key);
   }
 
@@ -147,7 +147,7 @@ export class Table extends EventEmitter implements tableObj {
    * @param meta {addDataMetaObj} any other values that the key/data factories need
    *
    */
-  public add(data: any, meta?: addDataMetaObj): recordObj {
+  public add (data: any, meta?: addDataMetaObj): recordObj {
     const preparedData = this.createData(data, meta);
 
     // if meta doesn't contain key, generate an auto-key from the keyProvider.
@@ -156,7 +156,7 @@ export class Table extends EventEmitter implements tableObj {
     return this.set(key, preparedData);
   }
 
-  public set(key, data): recordObj {
+  public set (key, data): recordObj {
     const previous = this.data.get(key);
     this.emit('add:before', data, key, previous);
     this.data.set(key, data);
@@ -166,7 +166,7 @@ export class Table extends EventEmitter implements tableObj {
 
   // ----------------- Transact
 
-  transact(action: (base: baseObj) => any, onError?: (err: any) => any) {
+  transact (action: (base: baseObj) => any, onError?: (err: any) => any) {
     try {
       const out = this.base.transact(action);
       if (out?.error) {
@@ -181,32 +181,39 @@ export class Table extends EventEmitter implements tableObj {
     }
   }
 
-  public get records() {
-    return this.data.keys.map(key => new Record(this.base, this.name, key))
+  public records (keys) {
+    if (keys) {
+      return keys.reduce((memo, key) => {
+        if (this.hasKey(key)) {
+          memo.push(this.recordForKey(key));
+        }
+        return memo;
+      }, []);
+    }
+    return this.data.keys.map(key => this.recordForKey(key));
   }
 
-  public queryEach(query, action) {
+  public queryEach (query, action) {
     this.transact(() => {
       const records = this.query(query);
       records.forEach(action);
     });
   }
 
-  setField(key, field, value) {
+  setField (key, field, value) {
     const record = this.recordForKey(key);
     if (record.exists) {
       record.setField(field, value);
     }
   }
 
-  setManyFields(keys, field, value) {
+  setManyFields (keys, field, value) {
     this.transact(() => {
       let coll = keys;
-      if (typeof keys === "function") {
+      if (typeof keys === 'function') {
         this.data.cloneShallow.filter(keys).keys.forEach((iKey) => {
           this.setField(iKey, field, value);
         });
-
       } else {
         if (!isCollection(keys)) {
           coll = create(keys);
@@ -215,22 +222,21 @@ export class Table extends EventEmitter implements tableObj {
           this.recordForKey(key).setField(field, value);
         });
       }
-    })
+    });
   }
 
-  removeKey(key) {
+  removeKey (key) {
     this.transact(() => {
       this.data.deleteKey(key);
-    })
+    });
   }
 
-  removeQuery(query) {
+  removeQuery (query) {
     this.transact(() => {
-
       const remQuery = {
         tableName: this.name,
         ...query
-      }
+      };
       const toRemove = this.query(remQuery);
       const keys = toRemove.map((record) => record.key);
       const newData = this.data.cloneShallow().filter((_item, key) => !keys.includes(key));
@@ -241,17 +247,17 @@ export class Table extends EventEmitter implements tableObj {
     });
   }
 
-  updateData(newData: collectionObj<any, any, any>, noTrans) {
+  updateData (newData: collectionObj<any, any, any>, noTrans) {
     if (noTrans) {
       this._data = newData;
     } else {
       this.transact(() => {
         this.updateData(newData, true);
-      })
+      });
     }
   }
 
-  removeItem(item) {
+  removeItem (item) {
     this.transact(() => {
       this.data.deleteItem(item);
     });
@@ -259,18 +265,18 @@ export class Table extends EventEmitter implements tableObj {
 
   public keyProvider: keyProviderFn = () => KeyProviders.Default(this);
 
-  public getData(key: any) {
+  public getData (key: any) {
     return this.data.get(key);
   }
 
-  public createData(fromData?: any, meta?: any) {
+  public createData (fromData?: any, meta?: any) {
     if (this.dataCreator) {
       return this.dataCreator(this, fromData, meta);
     }
     return fromData;
   }
 
-  protected makeDataKey(recordInstance, meta) {
+  protected makeDataKey (recordInstance, meta) {
     const metaHasKey = meta && (typeof meta === 'object') && ('key' in meta);
     let key: any;
 
@@ -282,7 +288,7 @@ export class Table extends EventEmitter implements tableObj {
       this.emit('error', {
         action: 'createData',
         input: [recordInstance, meta]
-      })
+      });
       throw e('cannot make a tableName record without a key or keyProvider', {
         record: recordInstance, table: this, meta
       });
@@ -292,8 +298,8 @@ export class Table extends EventEmitter implements tableObj {
 
   // -------------------------- query
 
-  query(query: queryDef): recordObj[] {
-    if (query.tableName !== this.name) {
+  query (query: queryDef): recordObj[] {
+    if (query.tableName && (query.tableName !== this.name)) {
       console.log('table.query: badly targeted query, wrong tablename; ', query, 'should be ', this.name);
       throw new Error(`table.query: badly targeted query, wrong tablename, not "${this.name}"; `);
     }
@@ -302,7 +308,7 @@ export class Table extends EventEmitter implements tableObj {
     return qrs.records;
   }
 
-  stream(query: queryDef, listener) {
+  stream (query: queryDef, listener) {
     return new QueryFetchStream(this.base, query).subscribe(listener);
   }
 
@@ -311,7 +317,7 @@ export class Table extends EventEmitter implements tableObj {
    * @param keys
    * @param joinName
    */
-  join(keyMap: anyMap, joinName: string) {
+  join (keyMap: anyMap, joinName: string) {
     const query = {
       tableName: this.name,
       joins: [{
@@ -324,7 +330,7 @@ export class Table extends EventEmitter implements tableObj {
       if (!(foreignKeys && localKeys)) {
         return;
       }
-      const combs = { foreignKeys: arrayOfKeys(foreignKeys), localKeys: arrayOfKeys(localKeys) }
+      const combs = { foreignKeys: arrayOfKeys(foreignKeys), localKeys: arrayOfKeys(localKeys) };
 
       if (!((combs.foreignKeys.length > 0) && (combs.localKeys.length > 0))) {
         return;
@@ -344,7 +350,7 @@ export class Table extends EventEmitter implements tableObj {
    * @param helper
    * @protected
    */
-  protected _joinKeyPair(localKey, foreignKey, helper: tableRecordJoin) {
+  protected _joinKeyPair (localKey, foreignKey, helper: tableRecordJoin) {
     const foreignTableName = helper.foreignConn?.tableName;
     const record = this.recordForKey(localKey);
     const { localConn, foreignConn, baseJoinDef } = helper;
@@ -382,10 +388,11 @@ export class Table extends EventEmitter implements tableObj {
             },
             {
               field: foreignJoinField,
-              test: binaryOperator.eq, against: foreignKey
+              test: binaryOperator.eq,
+              against: foreignKey
             }
           ],
-          bool: booleanOperator.and,
+          bool: booleanOperator.and
         }
       });
 
@@ -409,7 +416,5 @@ export class Table extends EventEmitter implements tableObj {
     } else {
       throw new Error('need a foreign key in one of the join terms OR a joinTableName for many-many joins');
     }
-
   }
 }
-

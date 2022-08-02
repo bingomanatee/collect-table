@@ -1,25 +1,22 @@
 /* eslint-disable @typescript-eslint/ban-ts-ignore */
 import tap from 'tap';
-import pkg from '../dist/index.js';
+import { createBase, constants } from '../dist/carpenter.es.js';
 import makeContext from "../testHelpers/makeContext.mjs";
 import linkableContext from '../testHelpers/linkableContent.mjs';
 import petsAndOwners from '../testHelpers/pets_and_owners.mjs';
-
-const { default: createContext, constants } = pkg;
 import deepHome from './../testExpect/deepHome.json' assert { type: 'json' };
 import simpleHome from './../testExpect/simpleHome.json' assert { type: 'json' };
 import singleRecordGet from './../testExpect/singleRecord.json' assert { type: 'json' };
 import stateRS from './../testExpect/states.json' assert { type: 'json' };
 import deepStateRS from './../testExpect/deepStates.json' assert { type: 'json' };
 import userHats from './../testExpect/joinedHats.json' assert { type: 'json' };
-import * as fs from "fs";
 
 const { joinFreq, binaryOperator } = constants;
 
 tap.test('queries', (suite) => {
   suite.test('single item', eqTest => {
 
-    const ctx = makeContext(createContext, joinFreq);
+    const ctx = makeContext(createBase, joinFreq);
     const records = ctx.query({
       tableName: 'users',
       where: {
@@ -37,7 +34,7 @@ tap.test('queries', (suite) => {
   });
   suite.test('regExp match', reTest => {
 
-    const ctx = makeContext(createContext, joinFreq);
+    const ctx = makeContext(createBase, joinFreq);
     const queryItems = ctx.query({
       tableName: 'users',
       where: {
@@ -55,8 +52,9 @@ tap.test('queries', (suite) => {
 
   suite.test('join', (jTest) => {
 
-    const ctx = makeContext(createContext, joinFreq);
+    const ctx = makeContext(createBase, joinFreq);
 
+   // console.log('----------- simple home query --------------')
     const records = ctx.query({
       tableName: 'users',
       joins: [
@@ -64,19 +62,19 @@ tap.test('queries', (suite) => {
           joinName: 'home',
         }
       ]
-    }).map(r => r.value);
+    })
     /*
             console.log('==================== simple home query:', JSON.stringify(records)
               .replace(/\{/g, "\n{")
             );
     */
-
-    jTest.same(records, simpleHome);
+   // console.log('--- simple home query result:', records.map(r => r.valueWithID));
+    jTest.same(records.map(r => r.value), simpleHome);
     jTest.end();
   });
   suite.test('join deep', (jTest) => {
 
-    const ctx = makeContext(createContext, joinFreq);
+    const ctx = makeContext(createBase, joinFreq);
 
     const records = ctx.query({
       tableName: 'users',
@@ -102,40 +100,47 @@ tap.test('queries', (suite) => {
 
   suite.test('toMany', (tm) => {
 
-    const ctx = makeContext(createContext, joinFreq);
+    const ctx = makeContext(createBase, joinFreq);
+    // console.log('------ toMany test --------');
     const records = ctx.query({
       tableName: 'states',
       joins: [
         { joinName: 'stateInfo' }
       ]
-    }).map(r => r.value);;
-    // console.log('==================== state query:', JSON.stringify(records)
+    });
+    // console.log('==================== state query:', JSON.stringify(records.map(r => r.valueWithID))
     //   .replace(/\{/g, "\n{")
     // );
-
-    tm.same(records, stateRS);
+    // console.log('toMany test done');
+    tm.same(records.map(r => r.value), stateRS);
+    tm.same(records.map(r => r.value), stateRS);
 
 
     tm.end();
   });
 
   suite.test('toMany - deep', (tmDeep) => {
-
-    const ctx = makeContext(createContext, joinFreq);
+    const ctx = makeContext(createBase, joinFreq);
+   // console.log('-----  deepState');
     const records = ctx.query({
       tableName: 'states',
       joins: [
         { joinName: 'stateInfo', joins: [{ joinName: 'home' }] }
       ]
-    }).map(r => r.value)
+    })
+   /* console.log('----- end deepState');
 
-    tmDeep.same(records, deepStateRS);
+    console.log('==================== deepState:');
+    console.log(JSON.stringify(records.map(r => r.valueWithID))
+      .replace(/\{/g, "\n{")
+    );*/
+    tmDeep.same(records.map(r => r.value), deepStateRS);
 
     tmDeep.end();
   });
 
   suite.test('fk joins - large data set', (lds) => {
-    const base = petsAndOwners(createContext, joinFreq);
+    const base = petsAndOwners(createBase, joinFreq);
 
     const start = Date.now();
     const owners = base.query({
@@ -154,7 +159,7 @@ tap.test('queries', (suite) => {
   });
 
   suite.test('m2m joins', (m2m) => {
-    const ctx = linkableContext(createContext, joinFreq);
+    const ctx = linkableContext(createBase, joinFreq);
     const [dave] = ctx.query({
       tableName: 'users',
       where: {
@@ -180,10 +185,10 @@ tap.test('queries', (suite) => {
       ]
     }).map(r => r.value)
 
-    /*console.log('==================== Joined Hats:', JSON.stringify(joined)
+/*    console.log('==================== FOUND Joined Hats:', JSON.stringify(joined)
       .replace(/\{/g, "\n{")
     );
-    console.log('==================== FOUND Joined Hats:', JSON.stringify(userHats)
+    console.log('==================== Joined Hats:', JSON.stringify(userHats)
       .replace(/\{/g, "\n{")
     );*/
 

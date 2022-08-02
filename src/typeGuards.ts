@@ -1,7 +1,7 @@
-import type{ collectionObj } from "@wonderlandlabs/collect";
-import { recordObj } from "./types";
+import type{ collectionObj } from '@wonderlandlabs/collect';
+import { recordObj } from './types';
 
-export function isCollection(target): target is collectionObj<any, any, any> {
+export function isCollection (target): target is collectionObj<any, any, any> {
   if (!(target && typeof target === 'object')) {
     return false;
   }
@@ -12,10 +12,10 @@ export function isCollection(target): target is collectionObj<any, any, any> {
 const recordFields = 'key,data,get,tableName'.split(',');
 const recordLikeFields = 'key,data,tableName'.split(',');
 
-export function isTableRecord(target, recordLike = false) : target is recordObj {
+export function isTableRecord (target, recordLike = false) : target is recordObj {
   if (!(target && typeof target === 'object')) {
     return false;
   }
 
-  return (recordLike? recordLikeFields: recordFields).every((f) => f in target);
+  return (recordLike ? recordLikeFields : recordFields).every((f) => f in target);
 }

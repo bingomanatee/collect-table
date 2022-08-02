@@ -1,21 +1,18 @@
 /* eslint-disable @typescript-eslint/ban-ts-ignore */
 import tap from 'tap';
 import { create } from '@wonderlandlabs/collect';
+import { createBase, constants, QueryFetchStream } from '../dist/carpenter.es.js';
+import makeContext from '../testHelpers/makeContext.mjs';
+import qfs_result_stream from '../testExpect/qfs_result_stream.json' assert { type: 'json' };
 
-import pkg from '../dist/index.js';
-import makeContext from "../testHelpers/makeContext.mjs";
-import qfs_result_stream from '../testExpect/qfs_result_stream.json' assert {type: 'json'};
 const {
-  default: createContext, constants: {
-    joinFreq
-  },
-  QueryFetchStream
-} = pkg;
+  joinFreq
+} = constants;
 
 tap.test('DataSet', (suite) => {
 
   suite.test('fetchStream', (fs) => {
-    const ctx = makeContext(createContext, joinFreq);
+    const ctx = makeContext(createBase, joinFreq);
 
     const stream = new QueryFetchStream(
       ctx,
@@ -48,19 +45,19 @@ tap.test('DataSet', (suite) => {
           postcode: 823352,
           state: 'CA'
         }
-      )
+      );
       ctx.table('users').add(
-        {name: 'Newby Newface', email: 'newby@google.com', addID: 6});
-    })
+        { name: 'Newby Newface', email: 'newby@google.com', addID: 6 });
+    });
 
     fs.same(hits, qfs_result_stream.slice(0, 2));
-/*   console.log('========= hits after :', JSON.stringify(hits)
-      .replace(/\{/g, "\n{")
-      .replace(/\[/g, "\n[")
-    );*/
+    /*   console.log('========= hits after :', JSON.stringify(hits)
+          .replace(/\{/g, "\n{")
+          .replace(/\[/g, "\n[")
+        );*/
 
     fs.end();
   });
 
   suite.end();
-})
+});

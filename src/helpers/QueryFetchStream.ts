@@ -1,8 +1,8 @@
-import { BehaviorSubject, distinctUntilChanged } from "rxjs";
+import { BehaviorSubject, distinctUntilChanged } from 'rxjs';
 import isEqual from 'lodash.isequal';
-import { baseObj, queryDef } from "../types";
+import { baseObj, queryDef } from '../types';
 
-function listen(qfs: QueryFetchStream) {
+function listen (qfs: QueryFetchStream) {
   const { query, base } = qfs;
   const subject = new BehaviorSubject(base.query(query));
 
@@ -20,7 +20,7 @@ function listen(qfs: QueryFetchStream) {
 }
 
 export class QueryFetchStream {
-  constructor(base, query) {
+  constructor (base, query) {
     this.base = base;
     this.query = query;
   }
@@ -31,21 +31,20 @@ export class QueryFetchStream {
 
   private _subject: any;
 
-  get subject(): any {
+  get subject (): any {
     if (!this._subject) {
       this._subject = listen(this);
     }
     return this._subject;
   }
 
-  subscribe(listener) {
+  subscribe (listener) {
     return this.subject.subscribe(listener);
   }
 
-  get current() {
+  get current () {
     return this.base.query(this.subject);
   }
-
 }
 
 export default QueryFetchStream;

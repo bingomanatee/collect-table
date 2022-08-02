@@ -1,6 +1,6 @@
 import create from '@wonderlandlabs/collect';
 import EventEmitter from 'emitix';
-import {Change} from './Change';
+import { Change } from './Change';
 import {
   changeObj,
   baseObj,
@@ -8,15 +8,14 @@ import {
   mapCollection,
   queryDef,
   tableDefObj,
-  tableOptionsObj,
+  tableOptionsObj
 } from './types';
-import {Table} from './Table';
-import TableJoin from "./TableJoin";
-import QueryFetchStream from "./helpers/QueryFetchStream";
+import { Table } from './Table';
+import TableJoin from './TableJoin';
+import QueryFetchStream from './helpers/QueryFetchStream';
 
 export default class Base extends EventEmitter implements baseObj {
-
-  constructor(tables?: tableDefObj[], options?: baseOptsObj) {
+  constructor (tables?: tableDefObj[], options?: baseOptsObj) {
     super();
     if (tables) {
       tables.forEach(def => this.addTable(def));
@@ -34,36 +33,36 @@ export default class Base extends EventEmitter implements baseObj {
 
   public joins = create(new Map([]));
 
-  get lastChange(): changeObj | undefined {
+  get lastChange (): changeObj | undefined {
     return this.activeChanges.lastItem;
   }
 
-  get now() {
+  get now () {
     return this.time;
   }
 
-  get next() {
+  get next () {
     this.time += 1;
     return this.time;
   }
 
-  addOptions(_options?: baseOptsObj) {
+  addOptions (_options?: baseOptsObj) {
     if (_options?.joins) {
       _options.joins.forEach((join) => this.addJoin(join));
     }
   }
 
-  private _nameJoin(joinDef) {
+  private _nameJoin (joinDef) {
     const props = create([joinDef.from.table]);
     if (joinDef.from.key) {
       props.addAfter(joinDef.from.key);
     }
-    props.addAfter(joinDef.to.table)
+    props.addAfter(joinDef.to.table);
     if (joinDef.to.key) {
       props.addAfter(joinDef.to.key);
     }
-    while (this.joins.hasKey(props.store.join('_'))){
-      if( typeof props.lastItem === 'number') {
+    while (this.joins.hasKey(props.store.join('_'))) {
+      if (typeof props.lastItem === 'number') {
         props.set(props.size - 1, props.lastItem + 1);
       } else {
         props.addAfter(2);
@@ -72,7 +71,7 @@ export default class Base extends EventEmitter implements baseObj {
     return props.store.join('_');
   }
 
-  addJoin(join) {
+  addJoin (join) {
     const joinDef = new TableJoin(this, join);
     if (!joinDef.name) {
       joinDef.name = this._nameJoin(joinDef);
@@ -80,17 +79,17 @@ export default class Base extends EventEmitter implements baseObj {
     this.joins.set(joinDef.name, joinDef);
   }
 
-  restoreTable(name: string, tableCollection: mapCollection) {
+  restoreTable (name: string, tableCollection: mapCollection) {
     if (this.tables.hasKey(name)) {
       this.tables.get(name).restore(tableCollection);
     }
   }
 
-  hasTable(name: string) {
+  hasTable (name: string) {
     return this.tables.hasKey(name);
   }
 
-  transact(fn) {
+  transact (fn) {
     const change = new Change(this);
     this.activeChanges.addAfter(change);
     let out;
@@ -124,14 +123,14 @@ export default class Base extends EventEmitter implements baseObj {
    * @param name
    * @param options
    */
-  table(name, options?: tableOptionsObj) {
+  table (name, options?: tableOptionsObj) {
     if (!this.tables.hasKey(name)) {
       this.tables.set(name, new Table(this, name, options));
     }
     return this.tables.get(name);
   }
 
-  private addTable(def: tableDefObj | string) {
+  private addTable (def: tableDefObj | string) {
     if (typeof def === 'string') {
       this.table(def);
     } else {
@@ -139,8 +138,8 @@ export default class Base extends EventEmitter implements baseObj {
     }
   }
 
-  query(query:  queryDef) {
-    const {tableName } = query;
+  query (query: queryDef) {
+    const { tableName } = query;
     if (!this.hasTable(tableName)) {
       throw new Error(`query cannot find table ${tableName}`);
     }
@@ -148,12 +147,12 @@ export default class Base extends EventEmitter implements baseObj {
     return this.table(tableName)?.query(query);
   }
 
-  queryItems(query: queryDef) {
+  queryItems (query: queryDef) {
     const result = this.query(query);
-    return result? result.value.items.map(record => record.value) : [];
+    return result ? result.value.items.map(record => record.value) : [];
   }
 
-  stream(query: queryDef, listener) {
+  stream (query: queryDef, listener) {
     return new QueryFetchStream(this, query).subscribe(listener);
   }
 }

@@ -1,21 +1,23 @@
 import { enums, create } from '@wonderlandlabs/collect';
-import { collectionObj } from "@wonderlandlabs/collect/types/types";
+import { collectionObj } from '@wonderlandlabs/collect/types/types';
 import {
   baseObj, mapCollection,
   recordObj, tableRecordValueObj
-} from "./types";
+} from './types';
 import { isCollection, isTableRecord } from './typeGuards';
 
 const { FormEnum } = enums;
-
+let recordId = 1;
 /**
  * a bundled pointer to a record in a tableName.
  * In some bases, data is deterministic from the constructor;
  * if not defined (the normal use case) it is read from the table with every call to `.data`.
  */
 export default class Record implements recordObj {
-  constructor(base: baseObj, tableName: string, key: any, data?: any) {
+  constructor (base: baseObj, tableName: string, key: any, data?: any) {
     this.base = base;
+    this.id = recordId;
+    ++recordId;
     this.key = key;
     this.tableName = tableName;
     if (data !== undefined) {
@@ -23,16 +25,18 @@ export default class Record implements recordObj {
     }
   }
 
+  public id;
+
   public notes?: mapCollection;
 
-  public setNote(key, value) {
+  public setNote (key, value) {
     if (!this.notes) {
       this.notes = create(new Map());
     }
     this.notes.set(key, value);
   }
 
-  protected get noteObj() {
+  protected get noteObj () {
     if (!this.notes) {
       return undefined;
     }
@@ -40,7 +44,7 @@ export default class Record implements recordObj {
       // eslint-disable-next-line no-param-reassign
       meta[key] = item;
       return meta;
-    }, {})
+    }, {});
   }
 
   public key: any;
@@ -49,20 +53,20 @@ export default class Record implements recordObj {
 
   public base: baseObj;
 
-  get table() {
+  get table () {
     return this.base.table(this.tableName);
   }
 
   protected _data;
 
-  get data() {
+  get data () {
     if (this._data) {
       return this._data;
     }
     return this.table.getData(this.key);
   }
 
-  get(field): any {
+  get (field): any {
     if (!this.exists) {
       return undefined;
     }
@@ -74,7 +78,7 @@ export default class Record implements recordObj {
     return this.collection.get(field);
   }
 
-  setField(field, value) {
+  setField (field, value) {
     if (this.form === FormEnum.scalar) {
       return;
     }
@@ -85,24 +89,27 @@ export default class Record implements recordObj {
     }
   }
 
-  get exists() {
+  get exists () {
     return this.table.hasKey(this.key);
   }
 
   /**
    * a JSON of this item.
    */
-  get value(): tableRecordValueObj {
-
+  get value (): tableRecordValueObj {
     const out: tableRecordValueObj = {
       tableName: this.tableName,
       key: this.key,
-      data: this.data,
-    }
+      data: this.data
+    };
     if (this._joins) {
       out.joins = this.joinObj;
     }
     return out;
+  }
+
+  get valueWithID () {
+    return { ...this.value, id: this.id };
   }
 
   _joins?: mapCollection;
@@ -110,7 +117,7 @@ export default class Record implements recordObj {
   /**
    * returns joins flattened into an object -- or undefined/
    */
-  protected get joinObj() {
+  protected get joinObj () {
     const joins = this._joins;
     if (!joins) {
       return undefined;
@@ -125,7 +132,7 @@ export default class Record implements recordObj {
             return r.value;
           }
           return r;
-        })
+        });
       }
       if (m) {
         // eslint-disable-next-line no-param-reassign
@@ -136,9 +143,9 @@ export default class Record implements recordObj {
     }, undefined);
   }
 
-  private _collection?: collectionObj<any, any, any>
+  private _collection?: collectionObj<any, any, any>;
 
-  get collection() {
+  get collection () {
     if (isCollection(this.data)) {
       return this.data;
     }
@@ -148,7 +155,7 @@ export default class Record implements recordObj {
     return this._collection;
   }
 
-  get form() {
+  get form () {
     return this.collection.form;
   }
 
@@ -157,7 +164,7 @@ export default class Record implements recordObj {
    * @param key the name of the join -- or the "as" field of the connection
    * @param items one/several related records
    */
-  public addJoin(key: any, items: recordObj | recordObj[] | null) {
+  public addJoin (key: any, items: recordObj | recordObj[] | null) {
     if (!this._joins) {
       this._joins = create(new Map());
     }
@@ -165,7 +172,7 @@ export default class Record implements recordObj {
     this._joins.set(key, items);
   }
 
-  delete() {
+  delete () {
     this.table.removeKey(this.key);
   }
 }

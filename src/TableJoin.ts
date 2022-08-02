@@ -1,26 +1,22 @@
-import {baseObj, joinConnObj, joinDefObj} from "./types";
-import {joinFreq} from "./constants";
+import { baseObj, joinConnObj, joinDefObj } from './types';
 
-function asConn(def) {
+function asConn (def) {
   let out = def;
   if (typeof def === 'string') {
     if (/\./.test(def)) {
       const [table, key] = def.split('.');
       out = {
         table, key
-      }
+      };
     } else {
-      out = {table: def};
+      out = { table: def };
     }
   }
 
-  if (! ('frequency' in out)) {
-    out.frequency = joinFreq.noneOrMore;
-  }
   return out;
 }
 
-export default class TableJoin implements joinDefObj{
+export default class TableJoin implements joinDefObj {
   base: baseObj;
 
   from: joinConnObj;
@@ -31,7 +27,7 @@ export default class TableJoin implements joinDefObj{
 
   joinTableName?: string;
 
-  constructor(base, def, opts?) {
+  constructor (base, def, opts?) {
     this.base = base;
     if (Array.isArray(def)) {
       const [fromTable, toTable] = def;
@@ -48,15 +44,15 @@ export default class TableJoin implements joinDefObj{
       this.name = def.name;
     }
 
-   this.parseOpts(opts);
+    this.parseOpts(opts);
   }
 
-  private parseOpts(opts?) {
+  private parseOpts (opts?) {
     if (!opts) return;
     if (typeof opts === 'string') {
       this.name = opts;
     }
-    if(opts.name) {
+    if (opts.name) {
       this.name = opts;
     }
   }

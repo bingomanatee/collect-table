@@ -1,6 +1,6 @@
 import create from '@wonderlandlabs/collect';
 import type { changeObj, baseObj, mapCollection } from './types';
-import { changePhases } from "./constants";
+import { changePhases } from './constants';
 
 /**
  * a wrapper for a single pending change.
@@ -15,42 +15,42 @@ export class Change implements changeObj {
 
   public backupTables = create(new Map<string, mapCollection>());
 
-  saveTableBackup(name, store) {
+  saveTableBackup (name, store) {
     // @TODO: throw if exists?
     this.backupTables.set(name, store);
   }
 
-  applyBackups() {
+  applyBackups () {
     this.backupTables.forEach((table, name) => {
       this.base.restoreTable(name, table);
-    })
+    });
   }
 
   error: any;
 
-  get isActive() {
+  get isActive () {
     return [
       changePhases.new,
       changePhases.started,
-      changePhases.validated,
+      changePhases.validated
     ].includes(this.phase);
   }
 
-  get isLive() {
+  get isLive () {
     return [changePhases.new, changePhases.started].includes(this.phase);
   }
 
-  get isFailed() {
+  get isFailed () {
     return this.phase === changePhases.failed;
   }
 
-  constructor(changes: baseObj) {
+  constructor (changes: baseObj) {
     this.time = changes.next;
     this.base = changes;
     this.phase = changePhases.started;
   }
 
-  start() {
+  start () {
     if (!this.isLive) {
       return;
     }
@@ -58,7 +58,7 @@ export class Change implements changeObj {
     this.base.emit('change-started', this);
   }
 
-  executed() {
+  executed () {
     if (!this.isLive) {
       return;
     }
@@ -66,14 +66,14 @@ export class Change implements changeObj {
     this.base.emit('change-executed', this);
   }
 
-  completed() {
+  completed () {
     if (!this.isFailed) {
       this.phase = changePhases.complete;
       this.base.emit('change-complete', this);
     }
   }
 
-  validated() {
+  validated () {
     if (!this.isActive) {
       return;
     }
@@ -81,7 +81,7 @@ export class Change implements changeObj {
     this.base.emit('change-validated', this);
   }
 
-  failed(err: any) {
+  failed (err: any) {
     if (!this.isActive) {
       return;
     }

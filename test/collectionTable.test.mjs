@@ -1,8 +1,5 @@
-/* eslint-disable @typescript-eslint/ban-ts-ignore */
 import tap from 'tap';
-import pkg from '../dist/index.js';
-
-const { default: createContext } = pkg;
+import { createBase } from '../dist/carpenter.es.js';
 
 tap.test('CollectionTable', (ct) => {
   const userCreator = (_table, item) => {
@@ -21,7 +18,7 @@ tap.test('CollectionTable', (ct) => {
   ct.test('constructor', (conTest) => {
 
     conTest.test('basic tableName creation', (bas) => {
-      const ctx = createContext(['users', 'addrs']);
+      const ctx = createBase(['users', 'addrs']);
       bas.ok(ctx.hasTable('users'));
       bas.ok(ctx.hasTable('addrs'));
       bas.notOk(ctx.hasTable('bassoons'));
@@ -29,7 +26,7 @@ tap.test('CollectionTable', (ct) => {
     });
 
     conTest.test('recordCreator', (rcTest) => {
-      const ctx = createContext();
+      const ctx = createBase();
       const users = ctx.table('users', {
         dataCreator: userCreator
       });
@@ -47,7 +44,7 @@ tap.test('CollectionTable', (ct) => {
 
   ct.test('get/add', (keyTest) => {
     keyTest.test('should create, get record value', (indexTest) => {
-      const ctx = createContext();
+      const ctx = createBase();
       const userTable = ctx.table('users');
 
       const { key } = userTable.add({ name: 'Bob', role: 'admin' });
@@ -67,7 +64,7 @@ tap.test('CollectionTable', (ct) => {
     ];
 
     amTest.test('basic', basicTest => {
-      const ctx = createContext();
+      const ctx = createBase();
       const userTable = ctx.table('users');
 
       const result = userTable.addMany([
@@ -84,7 +81,7 @@ tap.test('CollectionTable', (ct) => {
     })
 
     amTest.test('with bad data', (badTest) => {
-      const ctx = createContext();
+      const ctx = createBase();
       const users = ctx.table('users', {
         dataCreator: userCreator,
         data: [
