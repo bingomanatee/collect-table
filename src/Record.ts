@@ -1,5 +1,5 @@
 import { enums, create } from '@wonderlandlabs/collect';
-import { collectionObj } from '@wonderlandlabs/collect/types/types';
+import type { collectionObj } from '@wonderlandlabs/collect';
 import {
   baseObj, mapCollection,
   recordObj, tableRecordValueObj

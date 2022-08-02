@@ -1,4 +1,4 @@
-import create from '@wonderlandlabs/collect';
+import { create } from '@wonderlandlabs/collect';
 import EventEmitter from 'emitix';
 import { Change } from './Change';
 import {

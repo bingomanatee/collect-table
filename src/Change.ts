@@ -1,4 +1,4 @@
-import create from '@wonderlandlabs/collect';
+import { create } from '@wonderlandlabs/collect';
 import type { changeObj, baseObj, mapCollection } from './types';
 import { changePhases } from './constants';
 

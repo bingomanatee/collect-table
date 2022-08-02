@@ -1,5 +1,5 @@
 import { isCollection } from '../typeGuards';
-import create from '@wonderlandlabs/collect';
+import { create } from '@wonderlandlabs/collect';
 
 export default (record) => {
   if (isCollection(record)) {

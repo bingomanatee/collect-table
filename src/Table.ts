@@ -1,9 +1,9 @@
-import create, { utils } from '@wonderlandlabs/collect';
+import { create, utils } from '@wonderlandlabs/collect';
 import combinate from 'combinate';
 
 import EventEmitter from 'emitix';
 
-import type { collectionObj } from '@wonderlandlabs/collect/types/types';
+import type { collectionObj } from '@wonderlandlabs/collect';
 import type {
   addDataMetaObj,
   anyMap,
