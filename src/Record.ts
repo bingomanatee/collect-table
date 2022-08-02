@@ -167,9 +167,24 @@ export default class Record implements recordObj {
   public addJoin (key: any, items: recordObj | recordObj[] | null) {
     if (!this._joins) {
       this._joins = create(new Map());
+      this._joins.set(key, items);
+    } else if (this._joins.hasKey(key)) {
+      const existing = this._joins.get(key);
+      if (Array.isArray(items)) {
+        if (Array.isArray(existing)) {
+          this._joins.set(key, existing.concat(items));
+        } else {
+          items.push(existing);
+          this._joins.set(key, items);
+        }
+      } else {
+        if (Array.isArray(existing)) {
+          this._joins.set(key, existing.push(items));
+        } else {
+          this._joins.set(key, [items, existing]);
+        }
+      }
     }
-
-    this._joins.set(key, items);
   }
 
   delete () {

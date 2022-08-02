@@ -3,10 +3,11 @@ import {
   joinConnObj,
   queryDef,
   queryJoinDef,
-  recordObj,
   recordSetCollection,
   tableRecordJoin
 } from '../types';
+import { create } from '@wonderlandlabs/collect';
+
 import { joinForm } from '../constants';
 import asCollection from './asCollection';
 
@@ -102,26 +103,27 @@ export class TableRecordJoin implements tableRecordJoin {
   }
 
   getJoinedRecords (fromRecords: recordSetCollection) {
-    let records: (recordObj | undefined)[][] = [];
+    let foreignRecords: recordSetCollection;
     switch (this.joinForm) {
       case joinForm.manyToMany:
-        records = this.manyToManyRecords(fromRecords);
+        foreignRecords = this.manyToManyRecords(fromRecords);
         break;
 
       case joinForm.fromForeignKey:
-        records = this.fromForeignRecords(fromRecords);
+        foreignRecords = this.fromForeignRecords(fromRecords);
         break;
 
       case joinForm.toForeignKey:
-        records = this.toForeignRecords(fromRecords);
+        foreignRecords = this.toForeignRecords(fromRecords);
         break;
 
       case joinForm.badJoin:
         break;
+
       default:
-        records = [this.localTable?.records() || [], this.foreignTable?.records() || []];
+        throw new Error('get joined records cannot handle joinForm ' + this.joinForm);
     }
-    return records;
+    return foreignRecords;
   }
 
   get tableName () {
@@ -194,77 +196,92 @@ export class TableRecordJoin implements tableRecordJoin {
   }
 
   private manyToManyRecords (fromRecords: recordSetCollection) {
-    const localKeySet = new Set();
-    const foreignKeySet = new Set();
+    const foreignRecords = create(new Map());
+    const { joinTableFromKey, joinTableToKey, foreignTable, joinTable, attachKey } = this;
 
-    // @TODO: only filter if fromKeyMap size < fromTable.size
-    const fromKeyMap = fromRecords.keys.reduce((map, key) => {
-      map.set(key, key);
-      return map;
-    }, new Map());
+    if (!(foreignTable && joinTable)) {
+      return foreignRecords;
+    }
 
-    const jtFromKey = this.joinTableFromKey;
-    const jtToKey = this.joinTableToKey;
-    const joinKeys: any[] = [];
-
-    this.joinTable?.data.forEach((joinPair) => {
-      const conn = asCollection(joinPair);
-      const fromKey = conn.get(jtFromKey);
-      const toKey = conn.get(jtToKey);
-      if (!fromKeyMap.has(fromKey)) {
+    joinTable.data.forEach((data, key) => {
+      const coll = create(data);
+      const localKey = coll.get(joinTableFromKey);
+      const foreignKey = coll.get(joinTableToKey);
+      if (localKey === undefined || foreignKey === undefined) {
         return;
       }
-      localKeySet.add(fromKey);
-      foreignKeySet.add(toKey);
-      joinKeys.push([fromKey, toKey]);
+      const localRecord = fromRecords.get(localKey);
+      if (!(localRecord && foreignTable)) {
+        return;
+      }
+
+      let foreignRecord;
+      if (foreignRecords.hasKey(foreignKey)) {
+        foreignRecord = foreignRecords.get(foreignRecord);
+      } else {
+        foreignRecord = foreignTable.recordForKey(foreignKey);
+        foreignRecords.set(key, foreignRecord);
+      }
+      if (foreignRecord) {
+        localRecord.addJoin(attachKey, [foreignRecord]);
+      }
     });
 
-    return [
-      fromRecords.items.filter((record) => {
-        return localKeySet.has(record.key);
-      }),
-      this.foreignTable?.records(Array.from(foreignKeySet.values())) || [],
-      joinKeys
-    ];
+    return foreignRecords;
   }
 
-  private fromForeignRecords (fromRecords: recordSetCollection) {
-    const [localKeySet, foreignKeySet] = fromRecords.items
-      .reduce((memo, record) => {
-        const coll = record.collection;
-        if (coll.hasKey(this.localKey)) {
-          memo[0].add(record.key);
-          memo[1].add(coll.get(this.localKey));
-        }
-        return memo;
-      }, [new Set(), new Set()]);
+  private fromForeignRecords (fromRecords: recordSetCollection
+  ) {
+    const foreignRecords = create(new Map());
+    const { attachKey, localKey, foreignTable } = this;
+    if (!foreignTable || !localKey) {
+      return foreignRecords.items;
+    }
 
-    return [
-      fromRecords.items.filter((record) => {
-        return localKeySet.has(record.key);
-      }),
-      this.foreignTable?.records(Array.from(foreignKeySet.values())) || []
-    ];
+    fromRecords.forEach((record) => {
+      if (!record.collection.hasKey(localKey)) {
+        return;
+      }
+      const foreignKey = record.collection.get(localKey);
+      let foreignRecord;
+      if (foreignRecords.hasKey(foreignKey)) {
+        foreignRecord = foreignRecords.get(foreignKey);
+      } else {
+        foreignRecord = foreignTable.recordForKey(foreignKey);
+        foreignRecords.set(foreignKey, foreignRecord);
+      }
+      record.addJoin(attachKey, foreignRecord);
+    });
+
+    return foreignRecords;
   }
 
   private toForeignRecords (fromRecords: recordSetCollection) {
-    const [localKeySet, foreignKeySet] = this.foreignTable?.data
-      .reduce((memo, foreignData, foreignKey) => {
-        const foreignColl = asCollection(foreignData);
-        if (foreignColl.hasKey(this.foreignKey)) {
-          const localKey = foreignColl.get(this.foreignKey);
-          if (fromRecords.hasKey(localKey)) {
-            memo[0].add(localKey);
-            memo[1].add(foreignKey);
-          }
-        }
-        return memo;
-      }, [new Set(), new Set()]);
+    const foreignRecords = create(new Map());
+    const { attachKey, foreignKey, foreignTable } = this;
+    if (!foreignTable || !foreignKey) {
+      return foreignRecords.items;
+    }
 
-    return [
-      Array.from(localKeySet.values()).map((key) => fromRecords.get(key)),
-      this.foreignTable?.records(Array.from(foreignKeySet.values())) || []
-    ];
+    foreignTable.data.forEach((data, key) => {
+      const coll = asCollection(data);
+      if (coll.hasKey(foreignKey)) {
+        const localKey = coll.get(foreignKey);
+        if (fromRecords.hasKey(localKey)) {
+          const localRecord = fromRecords.get(localKey);
+          let foreignRecord;
+          if (foreignRecords.hasKey(key)) {
+            foreignRecord = foreignRecords.getKey(key);
+          } else {
+            foreignRecord = foreignTable?.recordForKey(key);
+            foreignRecords.set(key, foreignRecord);
+          }
+          localRecord.addJoin(attachKey, [foreignRecord]);
+        }
+      }
+    });
+
+    return foreignRecords;
   }
 }
 

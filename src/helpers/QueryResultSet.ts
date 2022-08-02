@@ -2,10 +2,7 @@ import { create } from '@wonderlandlabs/collect';
 import { baseObj, queryDef, recordSetCollection } from '../types';
 import TableRecordJoin from './TableRecordJoin';
 import whereFn from './whereFn';
-import { emitterMap } from './emitterMap';
-import getRecordField from './getRecordField';
 import recordArrayToMap from './RecordArrayToMap';
-import { joinForm } from '../constants';
 
 export class QueryResultSet {
   private query: queryDef;
@@ -48,54 +45,13 @@ export class QueryResultSet {
 
     query.joins?.forEach((joinDef) => {
       const helper = new TableRecordJoin(this.base, joinDef, query);
-
       if (helper.localConn && helper.foreignConn) {
-        const [localRecords, foreignRecords, joinKeys] = helper.getJoinedRecords(recordCollection);
-
-        const decoratedForeignRecords = (joinDef.joins?.length
-          ? helper.foreignTable?.query({
-            tableName: helper.foreignTable.name || '',
-            filter: (_table) => foreignRecords,
-            joins: joinDef.joins
-          })
-          : foreignRecords) || [];
-        const fKey = helper.foreignKey;
-        let foreignRecordMap = emitterMap(decoratedForeignRecords, (records, addKey) => {
-          records.forEach((record) => {
-            addKey(fKey ? getRecordField(record, fKey) : record.key, record);
-          });
+        const foreignRecords = helper.getJoinedRecords(recordCollection);
+        helper.foreignTable?.query({
+          tableName: helper.foreignTable.name || '',
+          filter: (_table) => foreignRecords.items,
+          joins: joinDef.joins
         });
-
-        if (helper.joinForm === joinForm.manyToMany) {
-          foreignRecordMap = emitterMap(joinKeys, (keys, addKey) => {
-            keys.forEach((keyPair) => {
-              const [localKey, foreignKey] = keyPair;
-              if (foreignRecordMap.hasKey(foreignKey)) {
-                addKey(localKey, foreignRecordMap.get(foreignKey));
-              } else {
-                console.log('cannot find foreign key', foreignKey, 'in', foreignRecordMap.store);
-              }
-            });
-          });
-        }
-
-        const { localKey } = helper;
-        localRecords.forEach((record) => {
-          if (record) {
-            const localKeyValue = localKey ? getRecordField(record, localKey) : record.key;
-            if (foreignRecordMap.hasKey(localKeyValue)) {
-              let joins = foreignRecordMap.get(localKeyValue);
-              if (joins && joins.length) {
-                if (!helper.foreignIsPlural) {
-                  joins = joins[0];
-                }
-                record.addJoin(helper.attachKey, joins);
-              }
-            }
-          }
-        });
-      } else {
-        console.warn('------ cannot find connections in ', helper);
       }
     });
 
