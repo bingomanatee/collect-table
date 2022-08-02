@@ -1,6 +1,6 @@
 {
   "name": "@wonderlandlabs/carpenter",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "description": "a client side db",
   "files": [
     "dist"
