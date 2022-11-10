@@ -118,6 +118,23 @@ export default class Base extends EventEmitter implements baseObj {
     return out;
   }
 
+  lockTables (_change: changeObj) {
+
+    /*    change.backupTables.keys().forEach((name) => {
+      if (this.hasTable(name)) {
+        this.tables.get(name).lock(change);
+      }
+    }); */
+  }
+
+  unlockTables (change: changeObj) {
+    change.backupTables.keys().forEach((name) => {
+      if (this.hasTable(name)) {
+        this.tables.get(name).unlock(change);
+      }
+    });
+  }
+
   /**
    * gets or generates a new TableCollection of a given name
    * @param name

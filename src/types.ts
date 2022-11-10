@@ -131,6 +131,8 @@ export type baseObj = {
   // eslint-disable-next-line no-use-before-define
   lastChange: changeObj | undefined;
   restoreTable(name: string, table: mapCollection);
+  lockTables: (changeObj) => void;
+  unlockTables: (changeObj) => void;
   joins: collectionObj<Map<string, joinDefObj>, string, joinDefObj>;
   query: (query: queryDef) => recordObj[];
   queryItems: (query: queryDef) => any[];

@@ -50,6 +50,23 @@ tap.test('queries', (suite) => {
     reTest.end();
   });
 
+
+  suite.test('function match', reTest => {
+
+    const ctx = makeContext(createBase, joinFreq);
+    const queryItems = ctx.query({
+      tableName: 'users',
+      where: (record) => {
+        return !(record.key % 2);
+      }
+    });
+
+    reTest.same(queryItems.length, 3);
+    reTest.same(queryItems.map((u) => u.key), [2, 4]);
+
+    reTest.end();
+  });
+
   suite.test('join', (jTest) => {
 
     const ctx = makeContext(createBase, joinFreq);

@@ -69,7 +69,9 @@ export class Change implements changeObj {
   completed () {
     if (!this.isFailed) {
       this.phase = changePhases.complete;
+      this.base.lockTables(this);
       this.base.emit('change-complete', this);
+      this.base.unlockTables(this);
     }
   }
 
