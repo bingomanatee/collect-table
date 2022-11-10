@@ -1,6 +1,6 @@
 
 
-export default function makeContext (createContext, joinFreq)  {
+export default function initTestBase (createContext, joinFreq)  {
   return createContext([{
     name: 'states',
     data: [

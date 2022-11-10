@@ -2,7 +2,7 @@
 import tap from 'tap';
 import { create } from '@wonderlandlabs/collect';
 import { createBase, constants, QueryFetchStream } from '../dist/carpenter.es.js';
-import makeContext from '../testHelpers/makeContext.mjs';
+import initTestBase from '../testHelpers/initTestBase.mjs';
 import qfs_result_stream from '../testExpect/qfs_result_stream.json' assert { type: 'json' };
 
 const {
@@ -12,7 +12,7 @@ const {
 tap.test('DataSet', (suite) => {
 
   suite.test('fetchStream', (fs) => {
-    const ctx = makeContext(createBase, joinFreq);
+    const ctx = initTestBase(createBase, joinFreq);
 
     const stream = new QueryFetchStream(
       ctx,
