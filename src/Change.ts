@@ -2,6 +2,7 @@ import { create } from '@wonderlandlabs/collect';
 import type { changeObj, baseObj, mapCollection } from './types';
 import { changePhases } from './constants';
 
+const LOCK_TABLE = Symbol('lock_table');
 /**
  * a wrapper for a single pending change.
  * Allows for rolling through phases during an update.
@@ -62,6 +63,7 @@ export class Change implements changeObj {
     if (!this.isLive) {
       return;
     }
+    // this.base.lockTables(this);
     this.phase = changePhases.executed;
     this.base.emit('change-executed', this);
   }
@@ -69,10 +71,9 @@ export class Change implements changeObj {
   completed () {
     if (!this.isFailed) {
       this.phase = changePhases.complete;
-      this.base.lockTables(this);
       this.base.emit('change-complete', this);
-      this.base.unlockTables(this);
     }
+  //  this.base.unlockTables(this);
   }
 
   validated () {
@@ -90,5 +91,28 @@ export class Change implements changeObj {
     this.error = err;
     this.phase = changePhases.failed;
     this.base.emit('change-failed', this);
+  }
+
+  private _locks = new Map();
+
+  lockTable (tableName) {
+    this._locks.set(tableName, LOCK_TABLE);
+  }
+
+  recordIsLocked (tableName, key) {
+    if (!this._locks.has(tableName)) {
+      return false;
+    }
+    if (this._locks.get(tableName) === LOCK_TABLE) {
+      return true;
+    }
+    return this._locks.get(tableName).has(key);
+  }
+
+  lockRecord (tableName: string, key: any, data: any, previous?: any): void {
+    if (!this._locks.has(tableName)) {
+      this._locks.set(tableName, new Map());
+    }
+    this._locks.get(tableName).set(key, { data, previous });
   }
 }

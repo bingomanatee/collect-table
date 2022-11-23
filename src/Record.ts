@@ -79,14 +79,7 @@ export default class Record implements recordObj {
   }
 
   setField (field, value) {
-    if (this.form === FormEnum.scalar) {
-      return;
-    }
-    if (typeof value === 'function') {
-      this.collection.set(field, value(this.data, this.key));
-    } else {
-      this.collection(field, value);
-    }
+    this.table.setField(this.key, field, value);
   }
 
   get exists () {

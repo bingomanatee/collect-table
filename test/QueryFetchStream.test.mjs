@@ -50,10 +50,10 @@ tap.test('DataSet', (suite) => {
         { name: 'Newby Newface', email: 'newby@google.com', addID: 6 });
     });
 
-       console.log('fetchStream: ========= hits after :', JSON.stringify(hits)
+    /*   console.log('fetchStream: ========= hits after :', JSON.stringify(hits)
           .replace(/\{/g, "\n{")
           .replace(/\[/g, "\n[")
-        );
+        );*/
 
     fs.same(hits, qfs_result_stream.slice(0, 2));
     fs.end();

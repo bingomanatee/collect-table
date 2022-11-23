@@ -64,6 +64,7 @@ export type keyProviderFn = (target: any, table: tableObj, meta?: any) => any[];
 export type recordFn = (tableRecordObj) => any;
 export type recordTestFn = (tableRecordObj) => boolean;
 export type queryEachFn = (record: tableRecordValueObj, ctx: baseObj, table: tableObj) => any;
+export type transactFn = (base: baseObj, change: changeObj) => any;
 
 // --- query : where
 
@@ -123,7 +124,7 @@ export type queryDef = {
 // -------------- CORE OBJECTS
 
 export type baseObj = {
-  transact: (fn: (changesObj) => any) => any;
+  transact: (fn: transactFn) => any;
   now: number;
   next: number;
   hasTable: (name: string) => boolean;
@@ -138,6 +139,7 @@ export type baseObj = {
   queryItems: (query: queryDef) => any[];
   activeChanges: collectionObj<changeObj[], number, changeObj>;
   stream: (query: queryDef, listener) => any;
+  recordIsLocked: (tableName: string, key: any) => boolean;
 } & EventEmitter;
 
 export type tableObj = {
@@ -150,6 +152,7 @@ export type tableObj = {
   hasKey: (key: any) => boolean;
   join: (keyMap: anyMap, joinName: string) =>void;
   keyField?: string;
+  lock: (change: changeObj) =>void;
   name: string;
   query: (query: queryDef) => recordObj[];
   queryEach: (query: queryDef, action: queryEachFn) => void;
@@ -159,16 +162,20 @@ export type tableObj = {
   removeKey: (key: any) => void;
   removeQuery: (query: stringObj) => void;
   restore: (store: anyMap) => tableObj;
-  setField: (key, field, value) => void;
+  setField: (key, field, value, change?: changeObj) => void;
   set: (key: any, data: any) => recordObj;
   setManyFields: (keys, field, value) => void;
   stream: (query: queryDef, listener) => any;
+  recordIsLocked: (key: any) => boolean;
+  transact: (fn: transactFn) => any;
 } & EventEmitter;
 
 export type changeObj = {
   time: number;
   base: baseObj;
   backupTables: mapCollection;
+  lockRecord: (tableName: string, key: any, data: any, previous?: any) => void;
+  lockTable: (tableName: string) => void;
   saveTableBackup: (tableName: string, store: Map<any, any>) => void;
   phase: changePhases;
   error?: any;

@@ -1,4 +1,4 @@
-import { create, utils } from '@wonderlandlabs/collect';
+import { create, utils, enums } from '@wonderlandlabs/collect';
 import combinate from 'combinate';
 
 import EventEmitter from 'emitix';
@@ -14,7 +14,7 @@ import type {
   queryDef,
   recordObj,
   tableObj,
-  tableOptionsObj, tableRecordJoin
+  tableOptionsObj, tableRecordJoin, transactFn
 } from './types';
 import Record from './Record';
 import { isCollection, isTableRecord } from './typeGuards';
@@ -22,6 +22,8 @@ import QueryFetchStream from './helpers/QueryFetchStream';
 import QueryResultSet from './helpers/QueryResultSet';
 import TableRecordJoin from './helpers/TableRecordJoin';
 import { binaryOperator, booleanOperator } from './constants';
+
+const { FormEnum } = enums;
 
 const { e } = utils;
 
@@ -148,26 +150,40 @@ export class Table extends EventEmitter implements tableObj {
    *
    */
   public add (data: any, meta?: addDataMetaObj): recordObj {
-    this.tryChange('add', { data, meta });
     const preparedData = this.createData(data, meta);
 
     // if meta doesn't contain key, generate an auto-key from the keyProvider.
     const key = this.makeDataKey(preparedData, meta);
+    if (this.recordIsLocked(key)) {
+      throw e('attempt to add record over locked record', {
+        tableName: this.name, key, preparedData
+      });
+    }
 
     return this.set(key, preparedData);
   }
 
   public set (key, data): recordObj {
-    const previous = this.data.get(key);
-    this.emit('add:before', data, key, previous);
-    this.data.set(key, data);
-    this.emit('add:after', data, key, previous);
-    return this.recordForKey(key);
+    if (this.recordIsLocked(key)) {
+      throw e('cannot change record: locked by existing transaction',
+        { tableName: this.name, key, action: 'set' });
+    }
+
+    return this.base.transact((_base: baseObj, change?: changeObj) => {
+      const previous = this.data.get(key);
+      if (change) {
+        change.lockRecord(this.name, key, data, previous);
+      }
+      this.emit('set:before', this.name, key, data, previous);
+      this.data.set(key, data);
+      this.emit('set:after', this.name, key, data, previous);
+      return this.recordForKey(key);
+    });
   }
 
   // ----------------- Transact
 
-  transact (action: (base: baseObj) => any, onError?: (err: any) => any) {
+  transact (action: transactFn, onError?: (err: any) => any) {
     try {
       const out = this.base.transact(action);
       if (out?.error) {
@@ -201,15 +217,42 @@ export class Table extends EventEmitter implements tableObj {
     });
   }
 
-  setField (key, field, value) {
-    this.tryChange('setField', { key, field, value });
-    const record = this.recordForKey(key);
-    if (record.exists) {
-      record.setField(field, value);
+  setField (key, field, value, change?) {
+    if (!this.hasKey(key)) {
+      throw e('cannot set the field: no record for key', {
+        key, field, value
+      });
+    }
+    if (this.recordIsLocked(key)) {
+      throw e('attempt to set the field of a locked record', {
+        key, field, value
+      });
+    }
+
+    const data = this.getData(key);
+    const c = create(data).cloneShallow();
+    if (c.form === FormEnum.scalar) {
+      throw e('attempt to set ');
+    }
+    if (typeof value === 'function') {
+      c.set(field, value(c.store, this, this.base));
+    } else {
+      c.set(field, value);
+    }
+
+    if (change) {
+      change.lockRecord(this.name, key);
+      this.data.set(key, c.store);
+    } else {
+      this.transact((_base: baseObj, tChange: changeObj) => {
+        tChange.lockRecord(this.name, key, c.store, data);
+        this.data.set(key, c.store);
+      });
     }
   }
 
   private _locks: Set<changeObj> = new Set();
+
   lock (change: changeObj) {
     this._locks.add(change);
   }
@@ -219,7 +262,9 @@ export class Table extends EventEmitter implements tableObj {
   }
 
   setManyFields (keys, field, value) {
-    this.tryChange('setField', { keys, field, value });
+    if (keys.find((key) => this.recordIsLocked(key))) {
+      throw e('setManyFields: attempt to alter locked record', { keys, field, value });
+    }
     this.transact(() => {
       let coll = keys;
       if (typeof keys === 'function') {
@@ -260,19 +305,23 @@ export class Table extends EventEmitter implements tableObj {
   }
 
   updateData (newData: collectionObj<any, any, any>, noTrans) {
-    this.tryChange('removeItem', { newData, noTrans });
     if (noTrans) {
       this._data = newData;
     } else {
-      this.transact(() => {
-        this.updateData(newData, true);
+      this.transact((_base, change) => {
+        change.lockTable(this.name);
+        this._data = newData;
       });
     }
   }
 
   removeItem (item) {
-    this.tryChange('removeItem', { item });
-    this.transact(() => {
+    if (!this.data.hasItem(item)) {
+      return;
+    }
+    this.transact((_base, change) => {
+      const key = this.data.keyOf(item);
+      change.lockRecord(this.name, key, item);
       this.data.deleteItem(item);
     });
   }
@@ -332,7 +381,6 @@ export class Table extends EventEmitter implements tableObj {
    * @param joinName
    */
   join (keyMap: anyMap, joinName: string) {
-    this.tryChange('join', { keyMap, joinName });
     const query = {
       tableName: this.name,
       joins: [{
@@ -350,8 +398,10 @@ export class Table extends EventEmitter implements tableObj {
       if (!((combs.foreignKeys.length > 0) && (combs.localKeys.length > 0))) {
         return;
       }
-      combinate(combs).forEach(({ foreignKeys: foreignKey, localKeys: localKey }) => {
-        this._joinKeyPair(localKey, foreignKey, helper);
+      this.transact((_base, change) => {
+        combinate(combs).forEach(({ foreignKeys: foreignKey, localKeys: localKey }) => {
+          this._joinKeyPair(localKey, foreignKey, helper, change);
+        });
       });
     });
   }
@@ -365,8 +415,7 @@ export class Table extends EventEmitter implements tableObj {
    * @param helper
    * @protected
    */
-  protected _joinKeyPair (localKey, foreignKey, helper: tableRecordJoin) {
-    this.tryChange('_joinKeyPair', { localKey, foreignKey, helper });
+  protected _joinKeyPair (localKey, foreignKey, helper: tableRecordJoin, change: changeObj) {
     const foreignTableName = helper.foreignConn?.tableName;
     const record = this.recordForKey(localKey);
     const { localConn, foreignConn, baseJoinDef } = helper;
@@ -425,7 +474,7 @@ export class Table extends EventEmitter implements tableObj {
       if (foreignConn.key) {
         throw new Error('you cannot have two foreign keys in the same join');
       } else {
-        record.setField(localConn.key, foreignKey);
+        this.setField(localConn.key, foreignKey, change);
       }
     } else if (foreignConn.key) {
       foreignRecord.setField(foreignConn.key, localKey);
@@ -434,11 +483,7 @@ export class Table extends EventEmitter implements tableObj {
     }
   }
 
-  private tryChange (method: string, params?: {[key: string] : any}) {
-    if (this._locks.size > 0) {
-      throw e('cannot change locked table ' + this.name, {
-        method, params
-      });
-    }
+  recordIsLocked (key: any): boolean {
+    return this.base.recordIsLocked(this.name, key);
   }
 }

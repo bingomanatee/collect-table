@@ -8,7 +8,7 @@ import {
   mapCollection,
   queryDef,
   tableDefObj,
-  tableOptionsObj
+  tableOptionsObj, transactFn
 } from './types';
 import { Table } from './Table';
 import TableJoin from './TableJoin';
@@ -89,13 +89,13 @@ export default class Base extends EventEmitter implements baseObj {
     return this.tables.hasKey(name);
   }
 
-  transact (fn) {
+  transact (fn: transactFn) {
     const change = new Change(this);
     this.activeChanges.addAfter(change);
     let out;
     change.start();
     try {
-      out = fn(change);
+      out = fn(this, change);
       if (change.isActive) {
         change.executed();
       }
@@ -119,16 +119,15 @@ export default class Base extends EventEmitter implements baseObj {
   }
 
   lockTables (_change: changeObj) {
-
-    /*    change.backupTables.keys().forEach((name) => {
+    _change.backupTables.keys.forEach((name) => {
       if (this.hasTable(name)) {
-        this.tables.get(name).lock(change);
+        this.tables.get(name).lock(_change);
       }
-    }); */
+    });
   }
 
   unlockTables (change: changeObj) {
-    change.backupTables.keys().forEach((name) => {
+    change.backupTables.keys.forEach((name) => {
       if (this.hasTable(name)) {
         this.tables.get(name).unlock(change);
       }
@@ -171,5 +170,16 @@ export default class Base extends EventEmitter implements baseObj {
 
   stream (query: queryDef, listener) {
     return new QueryFetchStream(this, query).subscribe(listener);
+  }
+
+  recordIsLocked (tableName: string, key: any): boolean {
+    let locked = false;
+    this.activeChanges.forEach((change : Change, _index, _coll, stopper) => {
+      if (!locked) {
+        locked = change.recordIsLocked(tableName, key);
+        stopper.stopAfterThis();
+      }
+    });
+    return locked;
   }
 }
